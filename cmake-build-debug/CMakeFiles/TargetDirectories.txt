@@ -1,0 +1,3 @@
+C:/Users/thier/Downloads/ggggg-master(1)/ggggg-master/cmake-build-debug/CMakeFiles/projetbadland.dir
+C:/Users/thier/Downloads/ggggg-master(1)/ggggg-master/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/thier/Downloads/ggggg-master(1)/ggggg-master/cmake-build-debug/CMakeFiles/rebuild_cache.dir
