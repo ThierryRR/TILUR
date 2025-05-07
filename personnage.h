@@ -14,11 +14,8 @@ typedef struct {//vezezfzvevf
     int largeur, hauteur;
     int mort;
     int timer_vitesse;
-    int collant, timer_collant;
-    bool espace_relache;  // mémoire du relâchement pour bien détecter un nouvel appui
 
-  int  nb_pressions_espace;
-    int derniere_touche_espace; // pour gérer les appuis successifs
+
 
     BITMAP *sprites[5];
 } Personnage;
@@ -26,9 +23,10 @@ typedef struct {
     Personnage persos[MAX_PERSONNAGES];
     int nb_personnages;
 } GrpPersonnages;
-void deplacer_groupe(GrpPersonnages * g, BITMAP *fond, float screenx, int fin_scroll);
+void deplacer_groupe(GrpPersonnages *g, BITMAP *fond, float screenx, int fin_scroll,int *timer_malus_deplacement,int *timer_bonus_deplacement );
 void dessiner_groupe(GrpPersonnages *g, BITMAP *buffer);
-void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll);
+
+void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll,int *timer_malus_deplacement,int *timer_bonus_deplacement);
 void creation_personnage(Personnage *p,int x,int y, int largeur, int hauteur);
 void dessiner_personnage(Personnage *p, BITMAP* buffer);
 int collision_personnage(Personnage *p, BITMAP* fond, float screenx);

@@ -4,24 +4,183 @@
 #include "stdio.h"
 #include "scroll.h"
 #include "boolean.h"
+
+
+
 bool game_over = false;
+
 void affichage_ecran_dacceuil() {
-    BITMAP *image;
-    image=load_bitmap("badlandecran.bmp",NULL);
-    if(image==NULL) {
-        allegro_message("erreur");
+    BITMAP *image = load_bitmap("badlandecran.bmp", NULL);
+    if (image == NULL) {
+        allegro_message("Erreur chargement badlandecran.bmp");
         exit(1);
     }
-    blit(image,screen,0,0,0,0,image->w,image->h);
-    while(!key[KEY_SPACE]&& !key[KEY_ESC]) {
-        if(key[KEY_SPACE] && !key[KEY_ESC]) {
-            rest(10);
+
+    blit(image, screen, 0, 0, 0, 0, image->w, image->h);
+
+    while (!key[KEY_SPACE] && !key[KEY_ESC]) {
+        poll_keyboard();
+        rest(10);
+    }
+
+    destroy_bitmap(image);
+    clear_to_color(screen, makecol(0, 0, 0));
+
+    if (key[KEY_ESC]) {
+        game_over = true; // signaler un arrêt demandé
+    }
+}
+
+void ecran_menu() {
+    Joueur *j;
+    BITMAP *image = load_bitmap("badlandmenu.bmp", NULL);
+    if (image == NULL) {
+        allegro_message("Erreur chargement badlandmenu.bmp");
+        exit(1);
+    }
+
+    show_mouse(screen);
+
+    while (!key[KEY_ESC]) {
+        blit(image, screen, 0, 0, 0, 0, image->w, image->h);
+
+        poll_keyboard();
+
+        if (key[KEY_B]) {
+            affichage_ecran_dacceuil();
+            if (game_over) break;
+            clear_keybuf(); // vider les touches résiduelles
+            continue;
         }
+
+        if (mouse_b & 1) {
+            if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 225) && (mouse_y <= 320)) {
+                j = nouveau_joueur(screen);
+                if (j != NULL) {
+                    scrollingNiv1(j);
+                    game_over = false;
+                }
+                clear_keybuf();
+                continue;
+            }
+
+            if ((mouse_x >= 95) && (mouse_x <= 703) && (mouse_y >= 342) && (mouse_y <= 440)) {
+                j = chargement_du_joueur(screen);
+                if (j == (Joueur*)-1) {
+                    clear_keybuf();
+                    continue;  // retour sans relancer la fonction
+                }
+                if (j != NULL) {
+                    if (j->niveau == 1) scrollingNiv1(j);
+                    else if (j->niveau == 2) scrollingNiv2(j);
+                    game_over = false;
+                }
+                clear_keybuf();
+                continue;
+            }
+        }
+
+        rest(10);
     }
-    if(!key[KEY_SPACE] && key[KEY_ESC]) {
-        destroy_bitmap(image);
-        clear_to_color(screen,makecol(0,0,0));
+
+    destroy_bitmap(image);
+    clear_to_color(screen, makecol(0, 0, 0));
+}
+
+
+Joueur* chargement_du_joueur(BITMAP* screen) {
+    FILE *pf = fopen("joueur.txt", "r");
+    if (pf == NULL) {
+        allegro_message("Erreur ouverture joueur.txt");
+        return NULL;
     }
+
+    char noms[100][30];
+    int niveaux[100], xs[100], ys[100];
+    int nb = 0;
+    while (fscanf(pf, "%s %d %d %d", noms[nb], &niveaux[nb], &xs[nb], &ys[nb]) == 4 && nb < 100) {
+        nb++;
+    }
+    fclose(pf);
+
+    BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
+    if (!buffer) {
+        allegro_message("Erreur buffer");
+        return NULL;
+    }
+
+    BITMAP *fond = load_bitmap("fond.bmp", NULL);
+    if (!fond) {
+        allegro_message("Erreur chargement fond.bmp");
+        destroy_bitmap(buffer);
+        return NULL;
+    }
+
+    int ligne_hauteur = 50;
+    int start_y = 150;
+    int case_x = SCREEN_W - 100;
+    int case_l = 30;
+    int decalage_y = 20;
+
+    while (1) {
+        poll_keyboard();
+
+        if (key[KEY_ESC]) break;
+        if (key[KEY_B]) {
+            destroy_bitmap(fond);
+            destroy_bitmap(buffer);
+            return (Joueur*)-1; // code spécial pour retour menu
+        }
+
+        draw_sprite(buffer, fond, 0, 0);
+        textout_ex(buffer, font, "Clique sur une case pour sélectionner un joueur", 50, 50, makecol(255,255,255), -1);
+
+        for (int i = 0; i < nb; i++) {
+            int ligne_y = start_y + i * ligne_hauteur;
+            int texte_y = ligne_y + decalage_y;
+            int case_y = ligne_y + (ligne_hauteur - case_l) / 2;
+
+            textout_ex(buffer, font, noms[i], 50, texte_y, makecol(255,255,255), -1);
+            char niveau_str[20];
+            sprintf(niveau_str, "Niv %d", niveaux[i]);
+            textout_ex(buffer, font, niveau_str, 300, texte_y, makecol(255,255,255), -1);
+
+            rect(buffer, case_x, case_y, case_x + case_l, case_y + case_l, makecol(255,255,255));
+        }
+
+        show_mouse(buffer);
+        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+
+        if (mouse_b & 1) {
+            for (int i = 0; i < nb; i++) {
+                int ligne_y = start_y + i * ligne_hauteur;
+                int case_y = ligne_y + (ligne_hauteur - case_l) / 2;
+
+                if (mouse_x >= case_x && mouse_x <= case_x + case_l &&
+                    mouse_y >= case_y && mouse_y <= case_y + case_l) {
+
+                    Joueur* j = malloc(sizeof(Joueur));
+                    if (!j) return NULL;
+
+                    strcpy(j->nom, noms[i]);
+                    j->niveau = niveaux[i];
+                    j->reprise_x = xs[i];
+                    j->reprise_y = ys[i];
+
+                    destroy_bitmap(fond);
+                    destroy_bitmap(buffer);
+                    clear_keybuf();
+                    return j;
+                }
+            }
+        }
+
+        rest(10);
+    }
+
+    destroy_bitmap(fond);
+    destroy_bitmap(buffer);
+    return NULL;
 }
 void ecran_defaite(Joueur *j) {
     BITMAP *image = load_bitmap("ecran_defaite.bmp", NULL);
@@ -68,51 +227,6 @@ void ecran_defaite(Joueur *j) {
 }
 
 
-void ecran_menu() {
-    Joueur *j;
-    BITMAP *image;
-    image = load_bitmap("badlandmenu.bmp", NULL);
-    if (image == NULL) {
-        allegro_message("erreur");
-        exit(1);
-    }
-    blit(image, screen, 0, 0, 0, 0, image->w, image->h);
-    show_mouse(screen);
-    while (!key[KEY_ESC]) {
-        if (mouse_b & 1) {
-            if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 225) && (mouse_y <= 320)) {
-                j = nouveau_joueur(screen);
-                if (j != NULL) {
-                    scrollingNiv1(j);
-                    game_over = false;
-                    blit(image, screen, 0, 0, 0, 0, image->w, image->h); // ← re-affiche le menu
-                    show_mouse(screen);
-                }
-            }
-
-            if ((mouse_x >= 95) && (mouse_x <= 703) && (mouse_y >= 342) && (mouse_y <= 440)) {
-                j = chargement_du_joueur(screen);
-                if (j != NULL) {
-                    if(j->niveau == 1) {
-                        scrollingNiv1(j);
-                    }
-                    else if(j->niveau == 2) {
-                        scrollingNiv2(j);
-                        game_over = false;
-                    }
-                    else if(j->niveau == 3) {
-                        // restez branché...
-                    }
-
-                    blit(image, screen, 0, 0, 0, 0, image->w, image->h); // ← re-affiche le menu après
-                    show_mouse(screen);
-                }
-            }
-        }
-            }
-            destroy_bitmap(image);
-            clear_to_color(screen, makecol(0, 0, 0));
-        }
 
 void sauvegarder_joueur(Joueur *j) {
     FILE *pf = fopen("joueur.txt", "r");
@@ -345,91 +459,5 @@ int ecran_defaiteniv1() {
     destroy_bitmap(buffer);
     return 2;
 }
-Joueur* chargement_du_joueur(BITMAP* screen) {
-    FILE *pf = fopen("joueur.txt", "r");
-    if (pf == NULL) {
-        allegro_message("Erreur ouverture joueur.txt");
-        return NULL;
-    }
-
-    char noms[100][30];
-    int niveaux[100], xs[100], ys[100];
-    int nb = 0;
-    while (fscanf(pf, "%s %d %d %d", noms[nb], &niveaux[nb], &xs[nb], &ys[nb]) == 4 && nb < 100) {
-        nb++;
-    }
-    fclose(pf);
-
-    BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
-    if (!buffer) {
-        allegro_message("Erreur buffer");
-        return NULL;
-    }
-
-    BITMAP *fond = load_bitmap("fond.bmp", NULL);
-    if (!fond) {
-        allegro_message("Erreur chargement fond.bmp");
-        destroy_bitmap(buffer);
-        return NULL;
-    }
-
-    int ligne_hauteur = 50;
-    int start_y = 150;
-    int case_x = SCREEN_W - 100;
-    int case_l = 30;
-    int decalage_y = 20;
-
-    while (1) {
-        if (key[KEY_ESC]) break;
-
-        draw_sprite(buffer, fond, 0, 0);
-        textout_ex(buffer, font, "Clique sur une case pour sélectionner un joueur", 50, 50, makecol(255,255,255), -1);
-
-        for (int i = 0; i < nb; i++) {
-            int ligne_y = start_y + i * ligne_hauteur;
-            int texte_y = ligne_y + decalage_y;
-            int case_y = ligne_y + (ligne_hauteur - case_l) / 2;
-
-            textout_ex(buffer, font, noms[i], 50, texte_y, makecol(255,255,255), -1);
-            char niveau_str[20];
-            sprintf(niveau_str, "Niv %d", niveaux[i]);
-            textout_ex(buffer, font, niveau_str, 300, texte_y, makecol(255,255,255), -1);
-
-            rect(buffer, case_x, case_y, case_x + case_l, case_y + case_l, makecol(255,255,255));
-        }
-
-        show_mouse(buffer);
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-
-        if (mouse_b & 1) {
-            for (int i = 0; i < nb; i++) {
-                int ligne_y = start_y + i * ligne_hauteur;
-                int case_y = ligne_y + (ligne_hauteur - case_l) / 2;
-
-                if (mouse_x >= case_x && mouse_x <= case_x + case_l &&
-                    mouse_y >= case_y && mouse_y <= case_y + case_l) {
-
-                    Joueur* j = malloc(sizeof(Joueur));
-                    if (!j) return NULL;
-
-                    strcpy(j->nom, noms[i]);
-                    j->niveau = niveaux[i];
-                    j->reprise_x = xs[i];
-                    j->reprise_y = ys[i];
-
-                    destroy_bitmap(fond);
-                    destroy_bitmap(buffer);
-                    clear_keybuf();
-                    return j;
-                }
-            }
-        }
-
-        rest(10);
-    }
-
-    return NULL;
-}
-
 
 

@@ -16,8 +16,8 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
     BITMAP *malusvitesse = load_bitmap("4.bmp", NULL);
     BITMAP *malustaille = load_bitmap("malus.bmp", NULL);// <-- ajout ici
     BITMAP *bonuscomportement = load_bitmap("5.bmp", NULL);
-
-    if (!bonuscomportement||!fond_final || !page || !sprite_bonus || !sprite_bonus3 || !bombe0 || !bombe1 || !malusvitesse || !malustaille) {
+BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
+    if (!bonuscomport||!bonuscomportement||!fond_final || !page || !sprite_bonus || !sprite_bonus3 || !bombe0 || !bombe1 || !malusvitesse || !malustaille) {
         allegro_message("Erreur de chargement des ressources.");
         exit(1);
     }
@@ -48,7 +48,7 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
         creer_bonus(2000, 280, bombe0, bombe1)
     };
     BonusPosition mon_bonus3[NB_BONUS] = {
-        creer_bonus(300, 300, sprite_bonus3, NULL),
+        creer_bonus(1000, 300, sprite_bonus3, NULL),
         creer_bonus(4390, 200, sprite_bonus3, NULL),
         creer_bonus(2000, 280, sprite_bonus3, NULL)
     };
@@ -63,11 +63,14 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
         creer_bonus(4100, 280, malustaille, NULL)
     };
     BonusPosition mon_bonus5[NB_BONUS] = {
-        creer_bonus(200, 500, bonuscomportement, NULL),
+        creer_bonus(1200, 500, bonuscomportement, NULL),
         creer_bonus(3500, 250, bonuscomportement, NULL),
         creer_bonus(4100, 280, bonuscomportement, NULL)
     };
-
+BonusPosition mon_bonus6 [NB_BONUS]={
+creer_bonus(200, 300, bonuscomport, NULL),
+creer_bonus(3520, 250, bonuscomport, NULL),
+creer_bonus(4101, 280, bonuscomport, NULL)};
     for (int b = 0; b < NB_BONUS; b++) {
         mon_bonus2[b].largeur = bombe0->w / 12;
         mon_bonus2[b].hauteur = bombe0->h / 12;
@@ -84,7 +87,9 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
     int jeu_lance = 0;
     int timer_clones = 0;
     int timer_malus_taille = 0;
-
+    int timer_bonus_taille = 0;
+int timer_malus_deplacement=0;
+    int timer_bonus_deplacement=0;
     // Écran de démarrage
     clear_bitmap(page);
     blit(fond_final, page, (int)screenx, 0, 0, 0, SCREEN_W, SCREEN_H);
@@ -120,13 +125,14 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
             screenx += dragon_speed;
             if (screenx > fin_scroll) screenx = fin_scroll;
 
-            deplacer_groupe(&groupe, fond_final, screenx, fin_scroll);
+            deplacer_groupe(&groupe, fond_final, screenx, fin_scroll,&timer_malus_deplacement,&timer_bonus_deplacement);
             gerer_bonus_clones(mon_bonus1, &groupe, screenx, &timer_clones);
             gerer_malus_clones(mon_bonus2, &groupe, screenx);
             gerer_bonus_saut(mon_bonus3, &groupe, screenx, &dragon_acceleration_timer);
             gerer_malus_vitesse(mon_bonus4, &groupe, screenx, &dragon_malus_timer);
             gerer_malus_taille(malust, &groupe, screenx, &timer_malus_taille);
-gerer_bonus_collant(mon_bonus5,&groupe,fond_final,screenx);
+gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
+            gerer_bonus_deplacement(mon_bonus6,&groupe,screenx,&timer_bonus_taille);
             // Collision avec le checkpoint
             if (collision_checkpoint(&cp, &groupe, &reprise_x, &reprise_y, screenx)) {
                 j->reprise_x = cp.x;
@@ -155,6 +161,7 @@ gerer_bonus_collant(mon_bonus5,&groupe,fond_final,screenx);
                 afficher_bonus(mon_bonus4[b], page, screenx);
                 afficher_bonus((mon_bonus5[b]), page, screenx);
                 afficher_bonus(malust[b], page, screenx);
+                afficher_bonus(mon_bonus6[b], page, screenx);
             }
 
             afficher_checkpoint(page, cp, int_screenx);
@@ -314,7 +321,7 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
                 }
             }
 
-            deplacer_groupe(&groupe, fond_final, screenx, fin_scroll);
+           // deplacer_groupe(&groupe, fond_final, screenx, fin_scroll,);
 
             for (int b = 0; b < NB_BONUS; b++) {
                 if (collision_bonus(&mon_bonus1[b], groupe.persos[0].x, groupe.persos[0].y,
@@ -401,9 +408,11 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
 
             for (int b = 0; b < NB_BONUS; b++) {
                 afficher_bonus(mon_bonus1[b], page, screenx);
-                afficher_bonus(mon_bonus2[b], page, screenx);
+                afficher_bonus_explosion(mon_bonus2[b], page, screenx);
                 afficher_bonus(mon_bonus3[b], page, screenx);
+
             }
+
 
             dessiner_groupe(&groupe, page);
             temps--;

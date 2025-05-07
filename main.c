@@ -22,21 +22,10 @@ int main() {
     initialisation_allegro();
     int quitter_jeu = 0;
     Joueur *j = NULL;
- /*   // Création d'un checkpoint
-    checkpoint cp = creer_checkpoint(500, 300, "drapeau0.bmp", "drapeau1.bmp");
-    cp.largeur = cp.sprite[0]->w / 12;
-    cp.hauteur = cp.sprite[0]->h / 12;
-    int perso_x=405;
-    int perso_y= 305;
-    GrpPersonnages groupe;
-    int  reprise_x =500;
-    int  reprise_y =300;
-    collision_checkpoint(&cp, &groupe, &reprise_x, &reprise_y);
-    quitter_jeu = 0;
-    getchar();getchar();*/
 
+    affichage_ecran_dacceuil();
     while (!quitter_jeu) {
-        affichage_ecran_dacceuil();
+
         ecran_menu();
         while (!key[KEY_ESC]) {
             if (game_over) {

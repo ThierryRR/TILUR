@@ -187,14 +187,28 @@ void gerer_bonus_saut(BonusPosition mon_bonus3[], GrpPersonnages *groupe, int sc
 }
 void gerer_malus_vitesse(BonusPosition mon_bonus4[], GrpPersonnages *groupe, int screenx, int *dragon_malus_timer) {
     for (int b = 0; b < NB_BONUS; b++) {
+        if (!mon_bonus4[b].actif) continue;
+
         for (int i = 0; i < groupe->nb_personnages; i++) {
-            if (collision_bonus(&mon_bonus4[b], groupe->persos[i].x, groupe->persos[i].y, groupe->persos[i].largeur, groupe->persos[i].hauteur, screenx)) {
+            if (collision_bonus(&mon_bonus4[b],
+                                groupe->persos[i].x, groupe->persos[i].y,
+                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
+                                screenx)) {
+
+                // Effet sur tous les personnages
+                for (int j = 0; j < groupe->nb_personnages; j++) {
+                    groupe->persos[j].timer_vitesse = -180;  // valeur négative = malus ?
+                }
+
+                // Effet global sur scroll
                 *dragon_malus_timer = 180;
+
                 break;
-            }
+                                }
         }
     }
 }
+
 void gerer_malus_taille(BonusPosition malust[], GrpPersonnages*groupe, int screenx, int *timer_malus_taille) {
     for (int b = 0; b < NB_BONUS; b++) {
         for (int i = 0; i < groupe->nb_personnages; i++) {
@@ -219,6 +233,41 @@ void gerer_malus_taille(BonusPosition malust[], GrpPersonnages*groupe, int scree
         }
     }
 }
+void gerer_malus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe, int screenx, int *timer_malus_deplacement) {
+    for (int b = 0; b < NB_BONUS; b++) {
+        if (!deplacement[b].actif) continue;
+
+        for (int i = 0; i < groupe->nb_personnages; i++) {
+            if (collision_bonus(&deplacement[b],
+                                groupe->persos[i].x, groupe->persos[i].y,
+                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
+                                screenx)) {
+
+                *timer_malus_deplacement = 120;
+                break;
+                          }
+        }
+    }
+}
+
+void gerer_bonus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe, int screenx, int *timer_bonus_deplacement) {
+    for (int b = 0; b < NB_BONUS; b++) {
+        if (!deplacement[b].actif) continue;
+
+        for (int i = 0; i < groupe->nb_personnages; i++) {
+            if (collision_bonus(&deplacement[b],
+                                groupe->persos[i].x, groupe->persos[i].y,
+                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
+                                screenx)) {
+
+                *timer_bonus_deplacement = 120;  // effet global
+                break;
+                                }
+        }
+    }
+}
+
+
 
 void afficher_bonus_explosion(BonusPosition bonus, BITMAP *buffer, float screenx) {
     int largeur = bonus.largeur;
@@ -235,59 +284,6 @@ void afficher_bonus_explosion(BonusPosition bonus, BITMAP *buffer, float screenx
     }
 }
 
-void gerer_bonus_collant(BonusPosition mon_bonus5[], GrpPersonnages *groupe, BITMAP *fond, float screenx) {
-    for (int b = 0; b < NB_BONUS; b++) {
-        for (int i = 0; i < groupe->nb_personnages; i++) {
-            if (collision_bonus(&mon_bonus5[b], groupe->persos[i].x, groupe->persos[i].y,
-                                groupe->persos[i].largeur, groupe->persos[i].hauteur, screenx)) {
-
-                for (int j = 0; j < groupe->nb_personnages; j++) {
-                    Personnage *p = &groupe->persos[j];
-                    p->collant = 1;
-                    p->timer_collant = 180;
-                    p->nb_pressions_espace = 0;
-                    p->espace_relache = false;
-
-
-
-                    int pied_x = (int)(p->x + screenx + p->largeur / 2);
-                    int max_distance = 30;
-                    int trouve = 0;
-
-                    // 🔽 Chercher en dessous
-                    for (int y = p->y + p->hauteur; y < p->y + p->hauteur + max_distance && y < SCREEN_H; y++) {
-                        int couleur = getpixel(fond, pied_x, y);
-                        if (getr(couleur) == 0 && getg(couleur) == 0 && getb(couleur) == 0) {
-                            p->y = y - p->hauteur;
-                            trouve = 1;
-                            break;
-                        }
-                    }
-
-                    // 🔼 Sinon chercher au-dessus
-                    if (!trouve) {
-                        for (int y = p->y - 1; y > p->y - max_distance && y >= 0; y--) {
-                            int couleur = getpixel(fond, pied_x, y);
-                            if (getr(couleur) == 0 && getg(couleur) == 0 && getb(couleur) == 0) {
-                                p->y = y + 1;
-                                trouve = 1;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Si aucun décor trouvé, annule effet
-                    if (!trouve) {
-                        p->collant = 0;
-                        p->timer_collant = 0;
-                    }
-                }
-
-                break; // un seul bonus par frame
-            }
-        }
-    }
-}
 
 
 

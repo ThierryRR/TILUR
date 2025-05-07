@@ -8,12 +8,7 @@ void creation_personnage(Personnage *p,int x,int y, int largeur, int hauteur) {
     p->frame=0;
     p->largeur=largeur;
     p->hauteur=hauteur;
-    p->nb_pressions_espace=0;
-    p->collant=0;
-    p->espace_relache=true;
-    p->timer_collant=0;
     p->timer_vitesse=0;
-    p->derniere_touche_espace=0;
     char sprites[100];
     for(int i=0;i<5;i++) {
         sprintf(sprites, "dragon%d.bmp", i);
@@ -110,7 +105,7 @@ int saut_possible(Personnage* p, BITMAP* fond, float screenx) {
 }
 
 
-void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll) {
+void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll,int *timer_malus_deplacement,int *timer_bonus_deplacement) {
     int new_x = p->x;
     int new_y = p->y;
 
@@ -157,11 +152,7 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
         }
     }
 
-    // Si collant, ralentir la chute (mais pas le saut)
-    if (p->collant && p->vy > 0) {
-        p->vy = (p->vy / 7 );
-        if (p->vy < 1) p->vy = 1;  // pour ne pas bloquer
-    }
+
 
     new_y += p->vy;
     new_x += vx;
@@ -204,6 +195,36 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
     if (p->timer_vitesse > 0) {
         p->timer_vitesse--;
     }
+    if (*timer_malus_deplacement > 0) {
+        p->vy = 3;
+(*timer_malus_deplacement)--;
+        // On avance sans appliquer le saut ni gravité
+        int new_y = p->y + p->vy;
+        int old_y = p->y;
+        p->y = new_y;
+
+        if (collision_personnage(p, fond, screenx)) {
+            p->y = old_y;
+        }
+
+        return;
+    }
+    if (*timer_bonus_deplacement > 0) {
+(*timer_bonus_deplacement)--;
+        p->vy += 1;
+        if (p->vy > 6) p->vy = 6;
+        int new_y = p->y + p->vy;
+        int old_y = p->y;
+        p->y = new_y;
+
+        if (collision_personnage(p, fond, screenx)) {
+            p->y = old_y;
+            p->vy = 0;
+        }
+
+        return;
+    }
+
 }
 
 
@@ -222,9 +243,9 @@ void dessiner_groupe(GrpPersonnages *g, BITMAP *buffer) {
     }
 }
 
-void deplacer_groupe(GrpPersonnages *g, BITMAP *fond, float screenx, int fin_scroll) {
+void deplacer_groupe(GrpPersonnages *g, BITMAP *fond, float screenx, int fin_scroll,int *timer_malus_deplacement,int *timer_bonus_deplacement) {
     for (int i = 0; i < g->nb_personnages; i++) {
-        deplacer_personnage(&(g->persos[i]), fond, screenx, fin_scroll);
+        deplacer_personnage(&(g->persos[i]), fond, screenx, fin_scroll,timer_malus_deplacement,timer_bonus_deplacement);
     }
 }
 bool groupe_est_mort(GrpPersonnages *groupe) {
