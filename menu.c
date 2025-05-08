@@ -9,75 +9,120 @@
 
 bool game_over = false;
 
-void affichage_ecran_dacceuil() {
+void affichage_ecran_dacceuil(Joueur **j) {
     BITMAP *image = load_bitmap("badlandecran.bmp", NULL);
     if (image == NULL) {
         allegro_message("Erreur chargement badlandecran.bmp");
         exit(1);
     }
 
-    blit(image, screen, 0, 0, 0, 0, image->w, image->h);
+    BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
+    if (!buffer) {
+        destroy_bitmap(image);
+        allegro_message("Erreur création buffer");
+        exit(1);
+    }
 
-    while (!key[KEY_SPACE] && !key[KEY_ESC]) {
+    while (true) {
         poll_keyboard();
+
+        blit(image, buffer, 0, 0, 0, 0, image->w, image->h);
+
+        textout_centre_ex(buffer, font, "Appuie sur SPACE pour commencer", SCREEN_W / 2, SCREEN_H - 80, makecol(255, 255, 255), -1);
+        textout_centre_ex(buffer, font, "Appuie sur C pour charger un joueur", SCREEN_W / 2, SCREEN_H - 60, makecol(255, 255, 255), -1);
+        textout_centre_ex(buffer, font, "Appuie sur ESC pour quitter", SCREEN_W / 2, SCREEN_H - 40, makecol(255, 255, 255), -1);
+
+        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+
+        if (key[KEY_ESC]) {
+            game_over = true;
+            break;
+        }
+
+        if (key[KEY_SPACE]) {
+            while (key[KEY_SPACE]) poll_keyboard();
+            break;
+        }
+
+        if (key[KEY_ENTER]) {
+            while (key[KEY_C]) poll_keyboard();
+            *j = chargement_du_joueur(screen);  // <- on met à jour le pointeur sur joueur
+        }
+
         rest(10);
     }
 
     destroy_bitmap(image);
+    destroy_bitmap(buffer);
     clear_to_color(screen, makecol(0, 0, 0));
-
-    if (key[KEY_ESC]) {
-        game_over = true; // signaler un arrêt demandé
-    }
 }
 
+
 void ecran_menu() {
-    Joueur *j;
+    Joueur *j = NULL;
     BITMAP *image = load_bitmap("badlandmenu.bmp", NULL);
     if (image == NULL) {
         allegro_message("Erreur chargement badlandmenu.bmp");
         exit(1);
     }
 
+    game_over = false;  // <- On s'assure de repartir sur un jeu actif
     show_mouse(screen);
 
-    while (!key[KEY_ESC]) {
+    while (!key[KEY_ESC] && !game_over) {
         blit(image, screen, 0, 0, 0, 0, image->w, image->h);
-
         poll_keyboard();
 
         if (key[KEY_B]) {
-            affichage_ecran_dacceuil();
-            if (game_over) break;
-            clear_keybuf(); // vider les touches résiduelles
+            affichage_ecran_dacceuil(&j);
+            if (game_over) break;  // si ESC a été pressé dans l’écran d’accueil
+            clear_keybuf();
+            show_mouse(screen);  // <- Réafficher la souris après retour
             continue;
         }
 
         if (mouse_b & 1) {
+            // Nouveau joueur
             if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 225) && (mouse_y <= 320)) {
                 j = nouveau_joueur(screen);
                 if (j != NULL) {
                     scrollingNiv1(j);
                     game_over = false;
+                    show_mouse(screen);  // <- Réafficher la souris après retour du jeu
                 }
                 clear_keybuf();
                 continue;
             }
 
+            // Chargement joueur
+            // Chargement joueur
             if ((mouse_x >= 95) && (mouse_x <= 703) && (mouse_y >= 342) && (mouse_y <= 440)) {
                 j = chargement_du_joueur(screen);
-                if (j == (Joueur*)-1) {
+
+                if (j == NULL) {
+                    // Appui sur espace ou annulation : retour au menu sans rien faire
                     clear_keybuf();
-                    continue;  // retour sans relancer la fonction
+                    show_mouse(screen);
+                    continue;
                 }
-                if (j != NULL) {
-                    if (j->niveau == 1) scrollingNiv1(j);
-                    else if (j->niveau == 2) scrollingNiv2(j);
-                    game_over = false;
+
+                // Ne jamais accéder à j->niveau si j == NULL
+                if (j->niveau == 1) {
+                    scrollingNiv1(j);
+                } else if (j->niveau == 2) {
+                    scrollingNiv2(j);
                 }
+                else {
+                    allegro_message("ca arrive en mechant");
+                }
+
+                game_over = false;
+                show_mouse(screen);
                 clear_keybuf();
                 continue;
             }
+
+
         }
 
         rest(10);
@@ -86,6 +131,7 @@ void ecran_menu() {
     destroy_bitmap(image);
     clear_to_color(screen, makecol(0, 0, 0));
 }
+
 
 
 Joueur* chargement_du_joueur(BITMAP* screen) {
@@ -124,12 +170,13 @@ Joueur* chargement_du_joueur(BITMAP* screen) {
 
     while (1) {
         poll_keyboard();
-
         if (key[KEY_ESC]) break;
-        if (key[KEY_B]) {
-            destroy_bitmap(fond);
+        if (key[KEY_SPACE]) {
+            show_mouse(NULL);
             destroy_bitmap(buffer);
-            return (Joueur*)-1; // code spécial pour retour menu
+            destroy_bitmap(fond);
+            return NULL;
+
         }
 
         draw_sprite(buffer, fond, 0, 0);
@@ -160,7 +207,12 @@ Joueur* chargement_du_joueur(BITMAP* screen) {
                     mouse_y >= case_y && mouse_y <= case_y + case_l) {
 
                     Joueur* j = malloc(sizeof(Joueur));
-                    if (!j) return NULL;
+                    if (!j) {
+                        destroy_bitmap(buffer);
+                        destroy_bitmap(fond);
+                        allegro_message("Erreur allocation mémoire joueur");
+                        return NULL;
+                    }
 
                     strcpy(j->nom, noms[i]);
                     j->niveau = niveaux[i];
@@ -180,8 +232,10 @@ Joueur* chargement_du_joueur(BITMAP* screen) {
 
     destroy_bitmap(fond);
     destroy_bitmap(buffer);
+    clear_keybuf();
     return NULL;
 }
+
 void ecran_defaite(Joueur *j) {
     BITMAP *image = load_bitmap("ecran_defaite.bmp", NULL);
     if (!image) {

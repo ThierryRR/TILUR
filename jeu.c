@@ -33,7 +33,7 @@ BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
 
     creation_personnage(&groupe.persos[0], perso_x, reprise_y, 64, 64);
 
-    checkpoint cp = creer_checkpoint(600, 430, "drapeau0.bmp", "drapeau1.bmp");
+    checkpoint cp = creer_checkpoint(600, 330, "drapeau0.bmp", "drapeau1.bmp");
     cp.largeur = cp.sprite[0]->w / 12;
     cp.hauteur = cp.sprite[0]->h / 12;
 

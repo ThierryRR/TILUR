@@ -23,7 +23,7 @@ int main() {
     int quitter_jeu = 0;
     Joueur *j = NULL;
 
-    affichage_ecran_dacceuil();
+    affichage_ecran_dacceuil(&j);
     while (!quitter_jeu) {
 
         ecran_menu();

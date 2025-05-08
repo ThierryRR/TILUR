@@ -243,7 +243,7 @@ void gerer_malus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe
                                 groupe->persos[i].largeur, groupe->persos[i].hauteur,
                                 screenx)) {
 
-                *timer_malus_deplacement = 120;
+                *timer_malus_deplacement = 500;
                 break;
                           }
         }
@@ -260,7 +260,7 @@ void gerer_bonus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe
                                 groupe->persos[i].largeur, groupe->persos[i].hauteur,
                                 screenx)) {
 
-                *timer_bonus_deplacement = 120;  // effet global
+                *timer_bonus_deplacement = 500;  // effet global
                 break;
                                 }
         }
