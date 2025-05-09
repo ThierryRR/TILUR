@@ -33,7 +33,8 @@ void afficher_checkpoint(BITMAP *buffer, checkpoint cp, int screenx);int collisi
 void afficher_bonus(BonusPosition bonus, BITMAP *buffer, float screenx);
 int collision_bonus(BonusPosition *bonus, int perso_x, int perso_y, int perso_w, int perso_h, float screenx);
 void gerer_bonus_clones(BonusPosition mon_bonus1[], GrpPersonnages *groupe, int screenx, int *timer_clones);
-void gerer_malus_taille(BonusPosition malust[], GrpPersonnages*groupe, int screenx, int *timer_malus_taille);
+void gerer_taille_petit(BonusPosition malust[], GrpPersonnages*groupe, int screenx, int *timer_malus_taille);
+void gerer_taille_grand(BonusPosition bonust[], GrpPersonnages *groupe, int screenx, int *timer_bonus_taille);
 void afficher_bonus_explosion(BonusPosition bonus, BITMAP *buffer, float screenx);
 void gerer_malus_deplacement(BonusPosition deplacement[], GrpPersonnages*groupe, int screenx, int *timer_malus_deplacement);
 void gerer_bonus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe, int screenx, int *timer_bonus_deplacement);

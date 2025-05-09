@@ -209,7 +209,7 @@ void gerer_malus_vitesse(BonusPosition mon_bonus4[], GrpPersonnages *groupe, int
     }
 }
 
-void gerer_malus_taille(BonusPosition malust[], GrpPersonnages*groupe, int screenx, int *timer_malus_taille) {
+void gerer_taille_petit(BonusPosition malust[], GrpPersonnages*groupe, int screenx, int *timer_malus_taille) {
     for (int b = 0; b < NB_BONUS; b++) {
         for (int i = 0; i < groupe->nb_personnages; i++) {
             if (collision_bonus(&malust[b], groupe->persos[i].x, groupe->persos[i].y, groupe->persos[i].largeur, groupe->persos[i].hauteur, screenx)) {
@@ -229,6 +229,33 @@ void gerer_malus_taille(BonusPosition malust[], GrpPersonnages*groupe, int scree
             for (int j = 0; j < groupe->nb_personnages; j++) {
                 groupe->persos[j].largeur *= 2;
                 groupe->persos[j].hauteur *= 2;
+            }
+        }
+    }
+}
+
+void gerer_taille_grand (BonusPosition bonust[], GrpPersonnages *groupe, int screenx, int *timer_bonus_taille) {
+    for (int b = 0; b < NB_BONUS; b++) {
+        for (int i = 0; i < groupe->nb_personnages; i++) {
+            if (collision_bonus(&bonust[b], groupe->persos[i].x, groupe->persos[i].y,
+                                groupe->persos[i].largeur, groupe->persos[i].hauteur, screenx)) {
+                for (int j = 0; j < groupe->nb_personnages; j++) {
+                    groupe->persos[j].largeur *= 2;
+                    groupe->persos[j].hauteur *= 2;
+                }
+                *timer_bonus_taille = 300;
+                break;
+                                }
+        }
+    }
+
+    // Réduction après le délai
+    if (*timer_bonus_taille > 0) {
+        (*timer_bonus_taille)--;
+        if (*timer_bonus_taille == 0) {
+            for (int j = 0; j < groupe->nb_personnages; j++) {
+                groupe->persos[j].largeur /= 2;
+                groupe->persos[j].hauteur /= 2;
             }
         }
     }

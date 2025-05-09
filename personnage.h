@@ -14,11 +14,9 @@ typedef struct {//vezezfzvevf
     int largeur, hauteur;
     int mort;
     int timer_vitesse;
-
-
-
     BITMAP *sprites[5];
 } Personnage;
+
 typedef struct {
     Personnage persos[MAX_PERSONNAGES];
     int nb_personnages;

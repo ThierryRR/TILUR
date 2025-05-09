@@ -15,9 +15,10 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
     BITMAP *bombe1 = load_bitmap("bombe1.bmp", NULL);
     BITMAP *malusvitesse = load_bitmap("4.bmp", NULL);
     BITMAP *malustaille = load_bitmap("malus.bmp", NULL);// <-- ajout ici
+    BITMAP *bonustaille = load_bitmap("baloo.bmp", NULL); // <-- ton image pour le bonus de taille
     BITMAP *bonuscomportement = load_bitmap("5.bmp", NULL);
 BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
-    if (!bonuscomport||!bonuscomportement||!fond_final || !page || !sprite_bonus || !sprite_bonus3 || !bombe0 || !bombe1 || !malusvitesse || !malustaille) {
+    if (!bonuscomport||!bonuscomportement||!fond_final || !page || !sprite_bonus || !sprite_bonus3 || !bombe0 || !bombe1 || !malusvitesse || !malustaille || !bonustaille) {
         allegro_message("Erreur de chargement des ressources.");
         exit(1);
     }
@@ -58,7 +59,7 @@ BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
         creer_bonus(1000, 280, malusvitesse, NULL)
     };
     BonusPosition malust[NB_BONUS] = {
-        creer_bonus(600, 300, malustaille, NULL),
+        creer_bonus(3000, 300, malustaille, NULL),
         creer_bonus(3500, 250, malustaille, NULL),
         creer_bonus(4100, 280, malustaille, NULL)
     };
@@ -67,17 +68,22 @@ BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
         creer_bonus(3500, 250, bonuscomportement, NULL),
         creer_bonus(4100, 280, bonuscomportement, NULL)
     };
-BonusPosition mon_bonus6 [NB_BONUS]={
-creer_bonus(200, 300, bonuscomport, NULL),
-creer_bonus(3520, 250, bonuscomport, NULL),
-creer_bonus(4101, 280, bonuscomport, NULL)};
+    BonusPosition mon_bonus6 [NB_BONUS]={
+        creer_bonus(200, 300, bonuscomport, NULL),
+        creer_bonus(3520, 250, bonuscomport, NULL),
+        creer_bonus(4101, 280, bonuscomport, NULL)};
     for (int b = 0; b < NB_BONUS; b++) {
         mon_bonus2[b].largeur = bombe0->w / 12;
         mon_bonus2[b].hauteur = bombe0->h / 12;
         mon_bonus3[b].largeur = sprite_bonus3->w / 12;
         mon_bonus3[b].hauteur = sprite_bonus3->h / 12;
-
     }
+
+    BonusPosition bonust[NB_BONUS] = {
+        creer_bonus(700, 300, bonustaille, NULL),
+        creer_bonus(3600, 250, bonustaille, NULL),
+        creer_bonus(4200, 280, bonustaille, NULL)
+    };
 
     game_over = false;
     int fin_scroll = fond_final->w - SCREEN_W;
@@ -130,8 +136,9 @@ int timer_malus_deplacement=0;
             gerer_malus_clones(mon_bonus2, &groupe, screenx);
             gerer_bonus_saut(mon_bonus3, &groupe, screenx, &dragon_acceleration_timer);
             gerer_malus_vitesse(mon_bonus4, &groupe, screenx, &dragon_malus_timer);
-            gerer_malus_taille(malust, &groupe, screenx, &timer_malus_taille);
-gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
+            gerer_taille_petit(malust, &groupe, screenx, &timer_malus_taille);
+            gerer_taille_grand(bonust, &groupe, screenx, &timer_bonus_taille);
+            gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
             gerer_bonus_deplacement(mon_bonus6,&groupe,screenx,&timer_bonus_taille);
             // Collision avec le checkpoint
             if (collision_checkpoint(&cp, &groupe, &reprise_x, &reprise_y, screenx)) {
@@ -177,6 +184,7 @@ gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
                 afficher_bonus(mon_bonus4[b], page, screenx);
                 afficher_bonus((mon_bonus5[b]), page, screenx);
                 afficher_bonus(malust[b], page, screenx);
+                afficher_bonus(bonust[b], page, screenx);
                 afficher_bonus(mon_bonus6[b], page, screenx);
             }
 
@@ -210,6 +218,7 @@ FIN_JEU:
     destroy_bitmap(bombe1);
     destroy_bitmap(malusvitesse);
     destroy_bitmap(malustaille);
+    destroy_bitmap(bonustaille);
     destroy_bitmap(fond_final);
 }
 
