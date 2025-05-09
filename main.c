@@ -25,7 +25,6 @@ int main() {
 
     affichage_ecran_dacceuil(&j);
     while (!quitter_jeu) {
-
         ecran_menu();
         while (!key[KEY_ESC]) {
             if (game_over) {

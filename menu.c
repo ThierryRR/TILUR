@@ -16,48 +16,122 @@ void affichage_ecran_dacceuil(Joueur **j) {
         exit(1);
     }
 
-    BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
-    if (!buffer) {
-        destroy_bitmap(image);
-        allegro_message("Erreur création buffer");
+    blit(image, screen, 0, 0, 0, 0, image->w, image->h);
+
+    while (!key[KEY_SPACE] && !key[KEY_ESC]) {
+        poll_keyboard();
+        rest(10);
+    }
+
+    destroy_bitmap(image);
+    clear_to_color(screen, makecol(0, 0, 0));
+
+    if (key[KEY_ESC]) {
+        game_over = true; // signaler un arrêt demandé
+    }
+}void ecran_menu() {
+    Joueur *j = NULL;
+    BITMAP *image = load_bitmap("badlandmenu.bmp", NULL);
+    if (image == NULL) {
+        allegro_message("Erreur chargement badlandmenu.bmp");
         exit(1);
     }
 
-    while (true) {
+    game_over = false;
+    show_mouse(screen);
+
+    while (!key[KEY_ESC] && !game_over) {
+        blit(image, screen, 0, 0, 0, 0, image->w, image->h);
         poll_keyboard();
-
-        blit(image, buffer, 0, 0, 0, 0, image->w, image->h);
-
-        textout_centre_ex(buffer, font, "Appuie sur SPACE pour commencer", SCREEN_W / 2, SCREEN_H - 80, makecol(255, 255, 255), -1);
-        textout_centre_ex(buffer, font, "Appuie sur C pour charger un joueur", SCREEN_W / 2, SCREEN_H - 60, makecol(255, 255, 255), -1);
-        textout_centre_ex(buffer, font, "Appuie sur ESC pour quitter", SCREEN_W / 2, SCREEN_H - 40, makecol(255, 255, 255), -1);
-
-        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-
-        if (key[KEY_ESC]) {
-            game_over = true;
-            break;
+        // Raccourci : ENTER avec joueur actif
+        if (key[KEY_ENTER] && j != NULL) {
+            clear_keybuf();
+            scrollingNiv1(j);
+            show_mouse(screen);
+            continue;
         }
 
-        if (key[KEY_SPACE]) {
-            while (key[KEY_SPACE]) poll_keyboard();
-            break;
+
+        if (key[KEY_1]) {
+            Joueur *demo = malloc(sizeof(Joueur));
+            strcpy(demo->nom, "DEMO");
+            demo->niveau = 1;
+            demo->reprise_x = 75;
+            demo->reprise_y = 300;
+            clear_keybuf();
+            scrollingNiv1(demo);
+            free(demo);
+            show_mouse(screen);
+            continue;
         }
 
-        if (key[KEY_ENTER]) {
-            while (key[KEY_C]) poll_keyboard();
-            *j = chargement_du_joueur(screen);  // <- on met à jour le pointeur sur joueur
+        if (key[KEY_2]) {
+            Joueur *demo = malloc(sizeof(Joueur));
+            strcpy(demo->nom, "DEMO");
+            demo->niveau = 2;
+            demo->reprise_x = 75;
+            demo->reprise_y = 300;
+            clear_keybuf();
+            scrollingNiv2(demo);
+            free(demo);
+            show_mouse(screen);
+            continue;
+        }
+
+        if (key[KEY_B]) {
+            affichage_ecran_dacceuil(&j);
+            if (game_over) break;
+            clear_keybuf();
+            show_mouse(screen);
+            continue;
+        }
+
+        if (mouse_b & 1) {
+            // Nouveau joueur
+            if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 225) && (mouse_y <= 320)) {
+                j = nouveau_joueur(screen);
+                if (j != NULL) {
+                    scrollingNiv1(j);
+                    game_over = false;
+                    show_mouse(screen);
+                }
+                clear_keybuf();
+                continue;
+            }
+
+
+            if ((mouse_x >= 95) && (mouse_x <= 703) && (mouse_y >= 342) && (mouse_y <= 440)) {
+                j = chargement_du_joueur(screen);
+
+                if (j == NULL) {
+                    clear_keybuf();
+                    show_mouse(screen);
+                    continue;
+                }
+
+                if (j->niveau == 1) {
+                    scrollingNiv1(j);
+                } else if (j->niveau == 2) {
+                    scrollingNiv2(j);
+                } else {
+                    allegro_message("Niveau inconnu");
+                }
+
+                game_over = false;
+                show_mouse(screen);
+                clear_keybuf();
+                continue;
+            }
         }
 
         rest(10);
     }
 
     destroy_bitmap(image);
-    destroy_bitmap(buffer);
     clear_to_color(screen, makecol(0, 0, 0));
 }
 
-
+/*
 void ecran_menu() {
     Joueur *j = NULL;
     BITMAP *image = load_bitmap("badlandmenu.bmp", NULL);
@@ -130,7 +204,7 @@ void ecran_menu() {
 
     destroy_bitmap(image);
     clear_to_color(screen, makecol(0, 0, 0));
-}
+}*/
 
 
 
@@ -254,8 +328,7 @@ void ecran_defaite(Joueur *j) {
     while (1) {
         poll_keyboard();
         blit(image, buffer, 0, 0, 0, 0, image->w, image->h);
-        textout_centre_ex(buffer, font, "Appuie sur V pour rejouer", SCREEN_W / 2, SCREEN_H - 50, makecol(255, 255, 255), -1);
-        textout_centre_ex(buffer, font, "Appuie sur ESC pour quitter", SCREEN_W / 2, SCREEN_H - 30, makecol(255, 255, 255), -1);
+
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         if (keypressed()) {
             int k = readkey();
