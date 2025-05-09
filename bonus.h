@@ -13,7 +13,7 @@ typedef struct {
     int x, y;
     int largeur, hauteur;
     BITMAP *sprite;
-    BITMAP *sprite_explosion[2];
+    BITMAP *sprite_explosion[2]; // bitmap pour l'explosion
     int actif;
     int explosion_timer;
 
