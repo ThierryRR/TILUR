@@ -10,7 +10,7 @@
 bool game_over = false;
 
 void affichage_ecran_dacceuil(Joueur **j) {
-    BITMAP *image = load_bitmap("badlandecran.bmp", NULL);
+    BITMAP *image = load_bitmap("badlandecran1.bmp", NULL);
     if (image == NULL) {
         allegro_message("Erreur chargement badlandecran.bmp");
         exit(1);
