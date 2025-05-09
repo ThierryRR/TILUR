@@ -13,7 +13,7 @@ void scrolling(BITMAP *buffer);
 void ecran_menu();
 
 int charger_Joueur(Joueur *j);
-void sauvegarder_joueur(Joueur *j);
+int sauvegarder_joueur(Joueur *j);
 Joueur *saisir_joueur(BITMAP *screen);
 int recherche_dans_fichier(Joueur *j);
 Joueur *chargement_du_joueur(BITMAP *screen);

@@ -139,18 +139,23 @@ gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
                 j->reprise_y = cp.y;
                 sauvegarder_joueur(j);
             }
+            static int compteur_demo = 1;
+
             if (key[KEY_1]) {
                 Joueur *demo = malloc(sizeof(Joueur));
-                strcpy(demo->nom, "DEMO");
+                sprintf(demo->nom, "DEMO%d", compteur_demo++);
                 demo->niveau = 1;
                 demo->reprise_x = 75;
                 demo->reprise_y = 300;
+
                 clear_keybuf();
                 scrollingNiv1(demo);
+
                 free(demo);
                 show_mouse(screen);
                 continue;
             }
+
             if (groupe_est_mort(&groupe)) game_over = true;
 
             // Affichage
