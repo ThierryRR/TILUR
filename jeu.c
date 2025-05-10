@@ -131,15 +131,15 @@ int timer_malus_deplacement=0;
             screenx += dragon_speed;
             if (screenx > fin_scroll) screenx = fin_scroll;
 
-            deplacer_groupe(&groupe, fond_final, screenx, fin_scroll,&timer_malus_deplacement,&timer_bonus_deplacement);
-            gerer_bonus_clones(mon_bonus1, &groupe, screenx, &timer_clones);
+          deplacer_groupe(&groupe, fond_final, screenx, fin_scroll,&timer_malus_deplacement,&timer_bonus_deplacement);
+           /* gerer_bonus_clones(mon_bonus1, &groupe, screenx, &timer_clones);
             gerer_malus_clones(mon_bonus2, &groupe, screenx);
             gerer_bonus_saut(mon_bonus3, &groupe, screenx, &dragon_acceleration_timer);
             gerer_malus_vitesse(mon_bonus4, &groupe, screenx, &dragon_malus_timer);
             gerer_taille_petit(malust, &groupe, screenx, &timer_malus_taille);
             gerer_taille_grand(bonust, &groupe, screenx, &timer_bonus_taille);
             gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
-            gerer_bonus_deplacement(mon_bonus6,&groupe,screenx,&timer_bonus_taille);
+            gerer_bonus_deplacement(mon_bonus6,&groupe,screenx,&timer_bonus_taille);*/
             // Collision avec le checkpoint
             if (collision_checkpoint(&cp, &groupe, &reprise_x, &reprise_y, screenx)) {
                 j->reprise_x = cp.x;
@@ -152,7 +152,7 @@ int timer_malus_deplacement=0;
                 Joueur *demo = malloc(sizeof(Joueur));
                 sprintf(demo->nom, "DEMO%d", compteur_demo++);
                 demo->niveau = 1;
-                demo->reprise_x = 75;
+                demo->reprise_x = 1300;
                 demo->reprise_y = 300;
 
                 clear_keybuf();
