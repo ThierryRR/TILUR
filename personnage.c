@@ -52,27 +52,27 @@ void dessiner_personnage(Personnage *p, BITMAP* buffer) {
 
 
 int collision_personnage(Personnage* p, BITMAP* fond, float screenx) {
-    int largeur = 60;
-    int hauteur = 60;
     float offset_x = screenx;
     if ((int)screenx >= fond->w - SCREEN_W) {
         offset_x = fond->w - SCREEN_W;
     }
 
-    for (int dx = 0; dx < largeur; dx++) {
-        for (int dy = 1; dy < hauteur - 3; dy++) {
+    for (int dx = 0; dx < p->largeur; dx++) {
+        for (int dy = 1; dy < p->hauteur - 3; dy++) {
             int px = (int)(p->x + dx + offset_x);
             int py = p->y + dy;
+
             if (px >= 0 && px < fond->w && py >= 0 && py < fond->h) {
                 int couleur = getpixel(fond, px, py);
                 if (getr(couleur) == 0 && getg(couleur) == 0 && getb(couleur) == 0) {
-                    return 1;
+                    return 1; // décor noir → collision
                 }
             }
         }
     }
     return 0;
 }
+
 int collision_personnage2(Personnage* p, BITMAP* fond, float screenx) {
     int largeur = p->sprites[0]->w;
     int hauteur = p->sprites[0]->h;
@@ -105,127 +105,122 @@ int saut_possible(Personnage* p, BITMAP* fond, float screenx) {
 }
 
 
-void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll,int *timer_malus_deplacement,int *timer_bonus_deplacement) {
-    int new_x = p->x;
-    int new_y = p->y;
-
-    int pied_x = (int)(p->x + screenx + p->largeur / 2);
-    int pied_y = p->y + p->hauteur;
-
-    int couleur_sol = getpixel(fond, pied_x, pied_y);
-
-    // Si le pixel sous le perso est noir ET qu'on n'appuie pas sur espace
-    if ((getr(couleur_sol) == 0 && getg(couleur_sol) == 0 && getb(couleur_sol) == 0) && !key[KEY_SPACE]) {
-        p->vy = 0;
-        p->x -= 1;
-        return;
-    }
-
-    // Gestion du saut
-    if (key[KEY_SPACE]) {
-        if (saut_possible(p, fond, screenx)) {
-            p->vy = -5;
-            if (p->timer_vitesse > 0) {
-                p->vy = -7;
-            } else {
-                p->vy = -4;
-            }
-        } else {
-            p->vy = 2;
-            p->x -= 2;
-        }
-    } else {
-        p->vy += 1;
-    }
-
-    if (p->vy > 10) {
-        p->vy = 10;
-    }
-
-    // Gestion du déplacement horizontal
-    int vx = 0;
-    if ((int)screenx >= fin_scroll) {
-        vx = 2;
-        if (key[KEY_SPACE] && !saut_possible(p, fond, screenx)) {
-            p->vy += 3;
-            vx -= 3;
-        }
-    }
-
-
-
-    new_y += p->vy;
-    new_x += vx;
-    // Sauvegarder ancienne position
+void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll,
+                         int *timer_malus_deplacement, int *timer_bonus_deplacement) {
     int old_x = p->x;
     int old_y = p->y;
 
-    p->x = new_x;
-    p->y = new_y;
+    // ----- GESTION DES TIMERS -----
+    if (*timer_malus_deplacement > 0) {
+        (*timer_malus_deplacement)--;
+        p->vy = 3;
+    } else if (*timer_bonus_deplacement > 0) {
+        (*timer_bonus_deplacement)--;
+        p->vy += 1;
+        if (p->vy > 6) p->vy = 6;
+    } else {
+        if (key[KEY_SPACE]) {
+            if (p->vy > -6) p->vy -= 1;
+        } else {
+            if (p->vy < 6) p->vy += 1;
+        }
+
+        if (p->timer_vitesse > 0) {
+            p->vy *= 1.5;
+            p->timer_vitesse--;
+        } else if (p->timer_vitesse < 0) {
+            p->vy *= 0.5;
+            p->timer_vitesse++;
+        }
+
+        if (p->vy > 8) p->vy = 8;
+        if (p->vy < -8) p->vy = -8;
+    }
+
+    // ----- POSITION PRÉVISIONNELLE -----
+    int tentative_x = p->x;
+    int tentative_y = p->y + p->vy;
+
+    if ((int)screenx >= fin_scroll) {
+        tentative_x += 2;
+    }
+
+    // ----- TEST AVANT MOUVEMENT -----
+    p->x = tentative_x;
+    p->y = tentative_y;
 
     if (collision_personnage(p, fond, screenx)) {
         p->x = old_x;
-        if (key[KEY_SPACE] || p->vy < 0) {
+        p->y = old_y;
+        p->vy = 0;
+
+        int sorti_du_mur = 0;
+        for (int recul = 0; recul < 10; recul++) {
+            // Essai 1 : reculer + monter
+            p->x -= 1;
+            p->y -= 1;
+            if (!collision_personnage(p, fond, screenx)) {
+                sorti_du_mur = 1;
+                break;
+            }
+
+            // Essai 2 : reculer + descendre
+            p->y += 2;
+            if (!collision_personnage(p, fond, screenx)) {
+                sorti_du_mur = 1;
+                break;
+            }
+
+            // Essai 3 : reculer seul
+            p->y -= 1;
+            if (!collision_personnage(p, fond, screenx)) {
+                sorti_du_mur = 1;
+                break;
+            }
+        }
+
+        if (!sorti_du_mur) {
+            p->x = old_x;
             p->y = old_y;
             p->vy = 0;
         }
     }
 
-    p->x = new_x;
-    if (collision_personnage(p, fond, screenx)) {
-        p->x = old_x;
-    }
-
-    // Bords haut et bas de l'écran
+    // ----- LIMITES HAUT / BAS -----
     if (p->y < 0) {
         p->y = 0;
         p->vy = 0;
     }
-    if (p->y > SCREEN_H - p->hauteur) {
+    if (p->y + p->hauteur > SCREEN_H) {
         p->y = SCREEN_H - p->hauteur;
         p->vy = 0;
     }
 
-    // Bords droits (tant que le scroll n’est pas fini)
     if ((int)screenx < fin_scroll && p->x > SCREEN_W - p->largeur) {
         p->x = SCREEN_W - p->largeur;
     }
 
-    // Timer de vitesse
-    if (p->timer_vitesse > 0) {
-        p->timer_vitesse--;
+    // ----- CORRECTION SOL (remonter jusqu’à sortir) -----
+    int count_sol = 0;
+    while (collision_personnage(p, fond, screenx) && count_sol < 20) {
+        p->y -= 1;
+        count_sol++;
     }
-    if (*timer_malus_deplacement > 0) {
-        p->vy = 3;
-(*timer_malus_deplacement)--;
-        // On avance sans appliquer le saut ni gravité
-        int new_y = p->y + p->vy;
-        int old_y = p->y;
-        p->y = new_y;
 
-        if (collision_personnage(p, fond, screenx)) {
-            p->y = old_y;
+    // ----- CORRECTION PLAFOND (descendre s’il est collé) -----
+    if (!key[KEY_SPACE]) {
+        int count_plafond = 0;
+        while (collision_personnage(p, fond, screenx) && count_plafond < 20) {
+            p->y += 1;
+            p->x -=1;
+            count_plafond++;
         }
-
-        return;
     }
-    if (*timer_bonus_deplacement > 0) {
-(*timer_bonus_deplacement)--;
-        p->vy += 1;
-        if (p->vy > 6) p->vy = 6;
-        int new_y = p->y + p->vy;
-        int old_y = p->y;
-        p->y = new_y;
-
-        if (collision_personnage(p, fond, screenx)) {
-            p->y = old_y;
-            p->vy = 0;
-        }
-
-        return;
-    }
-
 }
+
+
+
+
 
 
 
