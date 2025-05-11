@@ -39,7 +39,7 @@ BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
     cp.hauteur = cp.sprite[0]->h / 12;
 
     BonusPosition mon_bonus1[NB_BONUS] = {
-        creer_bonus(200, 300, sprite_bonus, NULL),
+        creer_bonus(2800, 300, sprite_bonus, NULL),
         creer_bonus(300, 250, sprite_bonus, NULL),
         creer_bonus(1500, 280, sprite_bonus, NULL)
     };
@@ -49,12 +49,12 @@ BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
         creer_bonus(2000, 280, bombe0, bombe1)
     };
     BonusPosition mon_bonus3[NB_BONUS] = {
-        creer_bonus(1000, 300, sprite_bonus3, NULL),
+        creer_bonus(400, 300, sprite_bonus3, NULL),
         creer_bonus(4390, 200, sprite_bonus3, NULL),
         creer_bonus(2000, 280, sprite_bonus3, NULL)
     };
     BonusPosition mon_bonus4[NB_BONUS] = {
-        creer_bonus(2400, 300, malusvitesse, NULL),
+        creer_bonus(400, 300, malusvitesse, NULL),
         creer_bonus(4350, 200, malusvitesse, NULL),
         creer_bonus(1000, 280, malusvitesse, NULL)
     };
@@ -94,6 +94,7 @@ BITMAP *bonuscomport = load_bitmap("6.bmp", NULL);
     int timer_clones = 0;
     int timer_malus_taille = 0;
     int timer_bonus_taille = 0;
+    float dragonspeed=1;
 int timer_malus_deplacement=0;
     int timer_bonus_deplacement=0;
     // Écran de démarrage
@@ -118,28 +119,49 @@ int timer_malus_deplacement=0;
     LOCK_VARIABLE(temps);
     LOCK_FUNCTION(temps_init);
     install_int_ex(temps_init, BPS_TO_TIMER(60));
-
-    while (!game_over && !key[KEY_ESC]) {
+    while (!game_over) {
         poll_keyboard();
+
+        if (key[KEY_ESC]) {
+            allegro_exit();
+            exit(0);
+        }
+
         if (key[KEY_B]) {
-            ecran_menu();
+            affichage_ecran_dacceuil();
             goto FIN_JEU;
         }
 
         while (temps > 0) {
-            gerer_acceleration(&dragon_speed, &dragon_acceleration_timer, &dragon_malus_timer);
+            poll_keyboard();
+            int space = key[KEY_SPACE];  // fais-le en début de boucle
+            gerer_acceleration(&dragon_speed, &dragon_acceleration_timer, &dragon_malus_timer, space);
+
             screenx += dragon_speed;
             if (screenx > fin_scroll) screenx = fin_scroll;
-
+            for (int i = 0; i < groupe.nb_personnages; i++) {
+                int pos_abs = (int)screenx + groupe.persos[i].x;
+                if (pos_abs >= fond_final->w) {
+                    int choix = ecran_victoireniv1();
+                    if (choix == 1) {
+                        j->niveau = 2;
+                        sauvegarder_joueur(j);
+                        scrollingNiv2(j);
+                    } else {
+                        ecran_menu();
+                    }
+                    goto FIN_NIVEAU;
+                }
+            }
           deplacer_groupe(&groupe, fond_final, screenx, fin_scroll,&timer_malus_deplacement,&timer_bonus_deplacement);
-           /* gerer_bonus_clones(mon_bonus1, &groupe, screenx, &timer_clones);
-            gerer_malus_clones(mon_bonus2, &groupe, screenx);
+         //   gerer_bonus_clones(mon_bonus1, &groupe, screenx, &timer_clones);
+         //   gerer_malus_clones(mon_bonus2, &groupe, screenx);
             gerer_bonus_saut(mon_bonus3, &groupe, screenx, &dragon_acceleration_timer);
             gerer_malus_vitesse(mon_bonus4, &groupe, screenx, &dragon_malus_timer);
-            gerer_taille_petit(malust, &groupe, screenx, &timer_malus_taille);
-            gerer_taille_grand(bonust, &groupe, screenx, &timer_bonus_taille);
-            gerer_malus_deplacement(mon_bonus5, &groupe, screenx, &timer_malus_deplacement);
-            gerer_bonus_deplacement(mon_bonus6,&groupe,screenx,&timer_bonus_taille);*/
+      //      gerer_taille_petit(malust, &groupe, screenx, &timer_malus_taille);
+      //      gerer_taille_grand(bonust, &groupe, screenx, &timer_bonus_taille);
+       //     gerer_malus_deplacement(mon_bonus6, &groupe, screenx, &timer_malus_deplacement);
+        //    gerer_bonus_deplacement(mon_bonus5,&groupe,screenx,&timer_bonus_deplacement);
             // Collision avec le checkpoint
             if (collision_checkpoint(&cp, &groupe, &reprise_x, &reprise_y, screenx)) {
                 j->reprise_x = cp.x;
@@ -326,7 +348,10 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
         if (key[KEY_SPACE]) dragon_acceleration_timer = 30;
 
         while (temps > 0) {
-            gerer_acceleration(&dragon_speed, &dragon_acceleration_timer,&dragon_malus_timer);
+            int space = key[KEY_SPACE];  // fais-le en début de boucle
+
+
+            gerer_acceleration(&dragon_speed, &dragon_acceleration_timer,&dragon_malus_timer,space);
             screenx += dragon_speed;
             if (screenx > fin_scroll) screenx = fin_scroll;
 
@@ -747,7 +772,20 @@ FIN_NIVEAU:
     destroy_bitmap(sprite_bonus);
 }*/
 
-
+void gerer_acceleration(float *dragon_speed, int *dragon_acceleration_timer, int *dragon_malus_timer ,int space) {
+    if (*dragon_malus_timer > 0) {
+        *dragon_speed = 0.5;  // vitesse de scroll réduite
+        (*dragon_malus_timer)--;
+    } else if (*dragon_acceleration_timer > 0) {
+        *dragon_speed = 2.0;  // vitesse de scroll boostée
+        (*dragon_acceleration_timer)--;
+    } else if (space) {
+        *dragon_speed = 1.25;  // scroll légèrement accéléré à la main
+    } else {
+        *dragon_speed = 0.75;  // vitesse de scroll normale
+    }
+}
+/*
 void gerer_acceleration(float *dragon_speed, int *dragon_acceleration_timer, int *dragon_malus_timer) {
     if (*dragon_malus_timer > 0) {
         *dragon_speed = 0.75;  // vitesse réduite par malus
@@ -760,7 +798,7 @@ void gerer_acceleration(float *dragon_speed, int *dragon_acceleration_timer, int
     } else {
         *dragon_speed = 1;  // vitesse normale
     }
-}
+*/
 ///eedededed
 
 /*////edeeefef

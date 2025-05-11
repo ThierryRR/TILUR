@@ -8,7 +8,7 @@ typedef struct {
     int reprise_y;
 } Joueur;
 
-void affichage_ecran_dacceuil(Joueur **J);
+void affichage_ecran_dacceuil();
 void scrolling(BITMAP *buffer);
 void ecran_menu();
 

@@ -110,15 +110,34 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
     int old_x = p->x;
     int old_y = p->y;
 
-    // ----- GESTION DES TIMERS -----
+
     if (*timer_malus_deplacement > 0) {
         (*timer_malus_deplacement)--;
-        p->vy = 3;
-    } else if (*timer_bonus_deplacement > 0) {
-        (*timer_bonus_deplacement)--;
-        p->vy += 1;
+
+        if (key[KEY_SPACE]) {
+            if (p->vy > -3) p->vy -= 1;  // monte moins vite
+        } else {
+            if (p->vy < 6) p->vy += 1;   // chute normale
+        }
+
+        // Sécurité : limite max/min
         if (p->vy > 6) p->vy = 6;
-    } else {
+        if (p->vy < -3) p->vy = -3;
+    }
+
+    else if (*timer_bonus_deplacement > 0) {
+        (*timer_bonus_deplacement)--;
+
+        if (key[KEY_SPACE]) {
+            if (p->vy > -8) p->vy -= 2;  // il monte plus vite
+        } else {
+            if (p->vy < 6) p->vy += 1;   // chute normale
+        }
+
+        if (p->vy > 6) p->vy = 6;
+        if (p->vy < -8) p->vy = -8;
+    }
+    else {
         if (key[KEY_SPACE]) {
             if (p->vy > -6) p->vy -= 1;
         } else {

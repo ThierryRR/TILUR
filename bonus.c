@@ -177,9 +177,9 @@ void gerer_bonus_saut(BonusPosition mon_bonus3[], GrpPersonnages *groupe, int sc
         for (int i = 0; i < groupe->nb_personnages; i++) {
             if (collision_bonus(&mon_bonus3[b], groupe->persos[i].x, groupe->persos[i].y, groupe->persos[i].largeur, groupe->persos[i].hauteur, screenx)) {
                 for (int j = 0; j < groupe->nb_personnages; j++) {
-                    groupe->persos[j].timer_vitesse = 180;
+                    *dragon_acceleration_timer = 180;
                 }
-                *dragon_acceleration_timer = 180;
+
                 break;
             }
         }
@@ -187,24 +187,14 @@ void gerer_bonus_saut(BonusPosition mon_bonus3[], GrpPersonnages *groupe, int sc
 }
 void gerer_malus_vitesse(BonusPosition mon_bonus4[], GrpPersonnages *groupe, int screenx, int *dragon_malus_timer) {
     for (int b = 0; b < NB_BONUS; b++) {
-        if (!mon_bonus4[b].actif) continue;
-
         for (int i = 0; i < groupe->nb_personnages; i++) {
-            if (collision_bonus(&mon_bonus4[b],
-                                groupe->persos[i].x, groupe->persos[i].y,
-                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
-                                screenx)) {
-
-                // Effet sur tous les personnages
+            if (collision_bonus(&mon_bonus4[b], groupe->persos[i].x, groupe->persos[i].y, groupe->persos[i].largeur, groupe->persos[i].hauteur, screenx)) {
                 for (int j = 0; j < groupe->nb_personnages; j++) {
-                    groupe->persos[j].timer_vitesse = -180;  // valeur négative = malus ?
+                    *dragon_malus_timer = 180;
                 }
 
-                // Effet global sur scroll
-                *dragon_malus_timer = 180;
-
                 break;
-                                }
+            }
         }
     }
 }
@@ -276,7 +266,30 @@ void gerer_malus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe
         }
     }
 }
+/*
+void gerer_malus_vitesse(BonusPosition mon_bonus4[], GrpPersonnages *groupe, int screenx, int *dragon_malus_timer) {
+    for (int b = 0; b < NB_BONUS; b++) {
+        if (!mon_bonus4[b].actif) continue;
 
+        for (int i = 0; i < groupe->nb_personnages; i++) {
+            if (collision_bonus(&mon_bonus4[b],
+                                groupe->persos[i].x, groupe->persos[i].y,
+                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
+                                screenx)) {
+
+                // Effet sur tous les personnages
+                for (int j = 0; j < groupe->nb_personnages; j++) {
+                    groupe->persos[j].timer_vitesse = -180;  // valeur négative = malus ?
+                }
+
+                // Effet global sur scroll
+                *dragon_malus_timer = 180;
+
+                break;
+                                }
+        }
+    }
+}*/
 void gerer_bonus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe, int screenx, int *timer_bonus_deplacement) {
     for (int b = 0; b < NB_BONUS; b++) {
         if (!deplacement[b].actif) continue;
