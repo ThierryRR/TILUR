@@ -105,56 +105,26 @@ int saut_possible(Personnage* p, BITMAP* fond, float screenx) {
 }
 
 
-void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll,
-                         int *timer_malus_deplacement, int *timer_bonus_deplacement) {
+void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scroll) {
     int old_x = p->x;
     int old_y = p->y;
 
-
-    if (*timer_malus_deplacement > 0) {
-        (*timer_malus_deplacement)--;
-
-        if (key[KEY_SPACE]) {
-            if (p->vy > -3) p->vy -= 1;  // monte moins vite
-        } else {
-            if (p->vy < 6) p->vy += 1;   // chute normale
-        }
-
-        // Sécurité : limite max/min
-        if (p->vy > 6) p->vy = 6;
-        if (p->vy < -3) p->vy = -3;
+    if (key[KEY_SPACE]) {
+        if (p->vy > -6) p->vy -= 1;
+    } else {
+        if (p->vy < 6) p->vy += 1;
     }
 
-    else if (*timer_bonus_deplacement > 0) {
-        (*timer_bonus_deplacement)--;
-
-        if (key[KEY_SPACE]) {
-            if (p->vy > -8) p->vy -= 2;  // il monte plus vite
-        } else {
-            if (p->vy < 6) p->vy += 1;   // chute normale
-        }
-
-        if (p->vy > 6) p->vy = 6;
-        if (p->vy < -8) p->vy = -8;
+    if (p->timer_vitesse > 0) {
+        p->vy *= 1.5;
+        p->timer_vitesse--;
+    } else if (p->timer_vitesse < 0) {
+        p->vy *= 0.5;
+        p->timer_vitesse++;
     }
-    else {
-        if (key[KEY_SPACE]) {
-            if (p->vy > -6) p->vy -= 1;
-        } else {
-            if (p->vy < 6) p->vy += 1;
-        }
 
-        if (p->timer_vitesse > 0) {
-            p->vy *= 1.5;
-            p->timer_vitesse--;
-        } else if (p->timer_vitesse < 0) {
-            p->vy *= 0.5;
-            p->timer_vitesse++;
-        }
-
-        if (p->vy > 8) p->vy = 8;
-        if (p->vy < -8) p->vy = -8;
-    }
+    if (p->vy > 8) p->vy = 8;
+    if (p->vy < -8) p->vy = -8;
 
     // ----- POSITION PRÉVISIONNELLE -----
     int tentative_x = p->x;
@@ -175,7 +145,6 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
 
         int sorti_du_mur = 0;
         for (int recul = 0; recul < 10; recul++) {
-            // Essai 1 : reculer + monter
             p->x -= 1;
             p->y -= 1;
             if (!collision_personnage(p, fond, screenx)) {
@@ -183,14 +152,12 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
                 break;
             }
 
-            // Essai 2 : reculer + descendre
             p->y += 2;
             if (!collision_personnage(p, fond, screenx)) {
                 sorti_du_mur = 1;
                 break;
             }
 
-            // Essai 3 : reculer seul
             p->y -= 1;
             if (!collision_personnage(p, fond, screenx)) {
                 sorti_du_mur = 1;
@@ -205,7 +172,6 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
         }
     }
 
-    // ----- LIMITES HAUT / BAS -----
     if (p->y < 0) {
         p->y = 0;
         p->vy = 0;
@@ -219,24 +185,21 @@ void deplacer_personnage(Personnage *p, BITMAP *fond, float screenx, int fin_scr
         p->x = SCREEN_W - p->largeur;
     }
 
-    // ----- CORRECTION SOL (remonter jusqu’à sortir) -----
     int count_sol = 0;
     while (collision_personnage(p, fond, screenx) && count_sol < 20) {
         p->y -= 1;
         count_sol++;
     }
 
-    // ----- CORRECTION PLAFOND (descendre s’il est collé) -----
     if (!key[KEY_SPACE]) {
         int count_plafond = 0;
         while (collision_personnage(p, fond, screenx) && count_plafond < 20) {
             p->y += 1;
-            p->x -=1;
+            p->x -= 1;
             count_plafond++;
         }
     }
 }
-
 
 
 
@@ -257,9 +220,9 @@ void dessiner_groupe(GrpPersonnages *g, BITMAP *buffer) {
     }
 }
 
-void deplacer_groupe(GrpPersonnages *g, BITMAP *fond, float screenx, int fin_scroll,int *timer_malus_deplacement,int *timer_bonus_deplacement) {
+void deplacer_groupe(GrpPersonnages *g, BITMAP *fond, float screenx, int fin_scroll) {
     for (int i = 0; i < g->nb_personnages; i++) {
-        deplacer_personnage(&(g->persos[i]), fond, screenx, fin_scroll,timer_malus_deplacement,timer_bonus_deplacement);
+        deplacer_personnage(&(g->persos[i]), fond, screenx, fin_scroll);
     }
 }
 bool groupe_est_mort(GrpPersonnages *groupe) {
@@ -271,4 +234,67 @@ bool groupe_est_mort(GrpPersonnages *groupe) {
         }
     }
     return (morts == groupe->nb_personnages);
+}
+bool collision_pic(Personnage* p, BITMAP* fond, float screenx) {
+    float offset_x = screenx;
+    if (p->timer_pic > 0) return false;
+    if ((int)screenx >= fond->w - SCREEN_W) {
+        offset_x = fond->w - SCREEN_W;
+    }
+
+    for (int dx = 0; dx < p->largeur; dx++) {
+        for (int dy = 0; dy < p->hauteur; dy++) {  // toute la hauteur, pas -3
+            int px = (int)(p->x + dx + offset_x);
+            int py = p->y + dy;
+
+            if (px >= 0 && px < fond->w && py >= 0 && py < fond->h) {
+                int couleur = getpixel(fond, px, py);
+                if (getr(couleur) == 104 && getg(couleur) == 0 && getb(couleur) == 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+void gerer_collision_pics_groupe(GrpPersonnages *groupe, BITMAP *fond, float screenx) {
+    for (int i = 0; i < groupe->nb_personnages; i++) {
+        Personnage *p = &(groupe->persos[i]);
+
+        float offset_x = screenx;
+        if ((int)screenx >= fond->w - SCREEN_W) {
+            offset_x = fond->w - SCREEN_W;
+        }
+
+        bool touche_pic = false;
+        for (int dx = 0; dx < p->largeur; dx++) {
+            for (int dy = 0; dy < p->hauteur; dy++) {
+                int px = (int)(p->x + dx + offset_x);
+                int py = p->y + dy;
+                if (px >= 0 && px < fond->w && py >= 0 && py < fond->h) {
+                    int couleur = getpixel(fond, px, py);
+                    if (getr(couleur) == 104 && getg(couleur) == 0 && getb(couleur) == 0) {
+                        touche_pic = true;
+                        break;
+                    }
+                }
+            }
+            if (touche_pic) break;
+        }
+
+        if (touche_pic) {
+            if (p->timer_pic > 0) {
+                // Immunisé : bloque le perso comme un mur, mais ne le tue pas
+                p->x -= 1;
+                p->vy = 0;
+            } else {
+                // Pas immunisé : le perso est retiré du groupe (mort)
+                for (int j = i; j < groupe->nb_personnages - 1; j++) {
+                    groupe->persos[j] = groupe->persos[j + 1];
+                }
+                groupe->nb_personnages--;
+                i--; // On ne saute pas le suivant
+            }
+        }
+    }
 }

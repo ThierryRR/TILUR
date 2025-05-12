@@ -81,6 +81,8 @@ void scrollingNiv2(Joueur *j) {
         "niveau2_3.bmp",
         "niveau2_4.bmp",
         "niveau2_5.bmp",
+        "niveau2_6.bmp",
+        "niveau2_7.bmp",
 
     };
     const int nb_fonds = sizeof(noms_fichiers) / sizeof(noms_fichiers[0]);

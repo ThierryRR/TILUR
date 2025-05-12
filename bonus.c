@@ -250,22 +250,7 @@ void gerer_taille_grand (BonusPosition bonust[], GrpPersonnages *groupe, int scr
         }
     }
 }
-void gerer_malus_deplacement(BonusPosition deplacement[], GrpPersonnages *groupe, int screenx, int *timer_malus_deplacement) {
-    for (int b = 0; b < NB_BONUS; b++) {
-        if (!deplacement[b].actif) continue;
 
-        for (int i = 0; i < groupe->nb_personnages; i++) {
-            if (collision_bonus(&deplacement[b],
-                                groupe->persos[i].x, groupe->persos[i].y,
-                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
-                                screenx)) {
-
-                *timer_malus_deplacement = 500;
-                break;
-                          }
-        }
-    }
-}
 /*
 void gerer_malus_vitesse(BonusPosition mon_bonus4[], GrpPersonnages *groupe, int screenx, int *dragon_malus_timer) {
     for (int b = 0; b < NB_BONUS; b++) {
@@ -326,5 +311,28 @@ void afficher_bonus_explosion(BonusPosition bonus, BITMAP *buffer, float screenx
 
 
 
+void gerer_bonus_immunite_pic(BonusPosition mon_bonus5[], GrpPersonnages *groupe, int screenx) {
+    for (int b = 0; b < NB_BONUS; b++) {
+        if (!mon_bonus5[b].actif) continue;
+
+        for (int i = 0; i < groupe->nb_personnages; i++) {
+            if (collision_bonus(&mon_bonus5[b],
+                                groupe->persos[i].x, groupe->persos[i].y,
+                                groupe->persos[i].largeur, groupe->persos[i].hauteur,
+                                screenx)) {
+                for (int j = 0; j < groupe->nb_personnages; j++) {
+                    groupe->persos[j].timer_pic = 300;
+                }
+                break;
+                                }
+        }
+    }
+
+    // Décrément timer
+    for (int i = 0; i < groupe->nb_personnages; i++) {
+        if (groupe->persos[i].timer_pic > 0)
+            groupe->persos[i].timer_pic--;
+    }
+}
 
 
