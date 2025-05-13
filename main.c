@@ -10,7 +10,7 @@ void initialisation_allegro() {
     install_keyboard();
     install_mouse();
     set_color_depth(desktop_color_depth());
-    if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, 800, 600, 0, 0) != 0) {
+    if (set_gfx_mode(GFX_AUTODETECT_FULLSCREEN, 1920, 1080, 0, 0) != 0) {
         allegro_message("Problème mode graphique");
         allegro_exit();
         exit(EXIT_FAILURE);
@@ -18,10 +18,15 @@ void initialisation_allegro() {
     LOCK_VARIABLE(temps);
     LOCK_FUNCTION(temps_init);
 }
+
+
+
 int main() {
     initialisation_allegro();
     int quitter_jeu = 0;
     Joueur *j = NULL;
+
+
 
     affichage_ecran_dacceuil(&j);
     while (!quitter_jeu) {
@@ -40,5 +45,8 @@ int main() {
     allegro_exit();
     return 0;
 }END_OF_MAIN();
+
+
+
 
 

@@ -49,11 +49,11 @@ int collision_bonus(BonusPosition *bonus, int perso_x, int perso_y, int perso_w,
     if (!bonus->actif) return 0;
 
     int bonus_ecran_x = bonus->x - (int)screenx;
-    int marge = 20;
-    int zone_x = bonus_ecran_x - marge / 2;
-    int zone_y = bonus->y - marge / 2;
-    int zone_largeur = bonus->largeur + marge;
-    int zone_hauteur = bonus->hauteur + marge;
+
+    int zone_x = bonus_ecran_x;
+    int zone_y = bonus->y ;
+    int zone_largeur = bonus->largeur ;
+    int zone_hauteur = bonus->hauteur;
 
     if (perso_x + perso_w > zone_x &&
         perso_x < zone_x + zone_largeur &&

@@ -10,6 +10,7 @@
 bool game_over = false;
 
 void affichage_ecran_dacceuil() {
+    show_mouse(NULL);
     BITMAP *image = load_bitmap("badlandecran1.bmp", NULL);
     if (image == NULL) {
         allegro_message("Erreur chargement badlandecran.bmp");
@@ -17,7 +18,7 @@ void affichage_ecran_dacceuil() {
     }
 
     blit(image, screen, 0, 0, 0, 0, image->w, image->h);
-
+clear_keybuf();
     while (!key[KEY_SPACE] && !key[KEY_ESC]) {
         poll_keyboard();
         rest(10);
@@ -25,7 +26,7 @@ void affichage_ecran_dacceuil() {
 
     destroy_bitmap(image);
     clear_to_color(screen, makecol(0, 0, 0));
-
+clear_keybuf();
     if (key[KEY_ESC]) {
         game_over = true;
     }
@@ -37,69 +38,73 @@ void affichage_ecran_dacceuil() {
         exit(1);
     }
 
+    BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
+    if (!buffer) {
+        destroy_bitmap(image);
+        allegro_message("Erreur création buffer");
+        exit(1);
+    }
+
     game_over = false;
-    show_mouse(screen);
+    static int compteur_demo = 1;
 
     while (!key[KEY_ESC] && !game_over) {
-        j = NULL;
-        blit(image, screen, 0, 0, 0, 0, image->w, image->h);
         poll_keyboard();
-        if (key[KEY_ENTER] && j != NULL) {
-            clear_keybuf();
-            scrollingNiv1(j);
-            show_mouse(screen);
-            continue;
-        }
 
-        static int compteur_demo = 1;
+        clear_bitmap(buffer);
+        blit(image, buffer, 0, 0, 0, 0, image->w, image->h);
+        show_mouse(buffer);
+        blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+        show_mouse(NULL);
 
-        if (key[KEY_1]) {
-            Joueur *demo = malloc(sizeof(Joueur));
-            sprintf(demo->nom, "DEMO%d", compteur_demo++);
-            demo->niveau = 1;
-            demo->reprise_x = 75;
-            demo->reprise_y = 300;
+        if (keypressed()) {
+            int k = readkey() >> 8;
 
-            clear_keybuf();
-            scrollingNiv1(demo);
-            free(demo);
-            show_mouse(screen);
-            continue;
-        }
+            if (k == KEY_1) {
+                Joueur *demo = malloc(sizeof(Joueur));
+                if (!demo) continue;
+                sprintf(demo->nom, "DEMO%d", compteur_demo++);
+                demo->niveau = 1;
+                demo->reprise_x = 75;
+                demo->reprise_y = 300;
+                clear_keybuf();
 
-        if (key[KEY_B]) {
-            affichage_ecran_dacceuil(&j);
-            if (game_over) break;
-            clear_keybuf();
-            show_mouse(screen);
-            continue;
+                destroy_bitmap(buffer);
+                destroy_bitmap(image);
+                scrollingNiv1(demo);
+                free(demo);
+                return;
+            }
+            if (k == KEY_TAB) {
+                clear_keybuf(); // toujours avant de changer d'écran
+                show_mouse(NULL);
+                destroy_bitmap(buffer);
+                destroy_bitmap(image);
+                affichage_ecran_dacceuil();
+                return;
+            }
+
+
         }
 
         if (mouse_b & 1) {
-            // 🎮 Création d’un nouveau joueur
-            if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 225) && (mouse_y <= 320)) {
+            if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 450) && (mouse_y <= 640)) {
+                destroy_bitmap(buffer);
+                destroy_bitmap(image);
                 Joueur *temp = nouveau_joueur(screen);
-                if (temp == NULL) {
-                    clear_keybuf();
-                    show_mouse(screen);
-                    continue;
-                }
+                clear_keybuf();
+                if (temp == NULL) return;
                 j = temp;
                 scrollingNiv1(j);
-
-                game_over = false;
-                show_mouse(screen);
-                clear_keybuf();
-                continue;
+                return;
             }
-            if ((mouse_x >= 95) && (mouse_x <= 703) && (mouse_y >= 342) && (mouse_y <= 440)) {
-                j = chargement_du_joueur(screen);
-                if (j == NULL) {
-                    clear_keybuf();
-                    show_mouse(screen);
-                    continue;
-                }
 
+            if ((mouse_x >= 237) && (mouse_x <= 1681) && (mouse_y >= 614) && (mouse_y <= 794)) {
+                destroy_bitmap(buffer);
+                destroy_bitmap(image);
+                j = chargement_du_joueur(screen);
+                clear_keybuf();
+                if (j == NULL) return;
                 if (j->niveau == 1) {
                     scrollingNiv1(j);
                 } else if (j->niveau == 2) {
@@ -107,17 +112,14 @@ void affichage_ecran_dacceuil() {
                 } else {
                     allegro_message("Niveau inconnu");
                 }
-
-                game_over = false;
-                show_mouse(screen);
-                clear_keybuf();
-                continue;
+                return;
             }
         }
 
         rest(10);
     }
 
+    destroy_bitmap(buffer);
     destroy_bitmap(image);
     clear_to_color(screen, makecol(0, 0, 0));
 }
@@ -247,7 +249,9 @@ void ecran_defaite(Joueur *j) {
         poll_keyboard();
         blit(image, buffer, 0, 0, 0, 0, image->w, image->h);
 
+        show_mouse(buffer);  // Affiche la souris sur le buffer
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+        show_mouse(NULL);    // Désactive après affichage
         if (keypressed()) {
             int k = readkey();
             int touche = k >> 8;
@@ -394,24 +398,19 @@ int sauvegarder_joueur(Joueur *j) {
     fclose(pf);
     return 1;
 }
-
-
-
-
-
-
-
 Joueur *saisir_joueur(BITMAP *screen) {
     BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
     if (!buffer) {
-        allegro_message("erreur");
-        exit(1);
+        allegro_message("Erreur buffer");
+        return NULL;
     }
     Joueur *j = malloc(sizeof(Joueur));
-    if (j == NULL) {
-        allegro_message("erreur");
-        exit(1);
+    if (!j) {
+        destroy_bitmap(buffer);
+        allegro_message("Erreur alloc joueur");
+        return NULL;
     }
+
     int i = 0;
     int touche = 1;
     j->niveau = 1;
@@ -420,11 +419,14 @@ Joueur *saisir_joueur(BITMAP *screen) {
     j->reprise_y = 300;
 
     while (!key[KEY_ENTER]) {
-        if(key[KEY_SPACE] ) {
+        poll_keyboard();
+        if (key[KEY_SPACE]) {
             destroy_bitmap(buffer);
             free(j);
+            clear_keybuf();
             return NULL;
         }
+
         if (keypressed() && touche) {
             int k = readkey();
             char c = k & 0xFF;
@@ -438,39 +440,22 @@ Joueur *saisir_joueur(BITMAP *screen) {
             }
             touche = 0;
         }
+
         if (!keypressed()) touche = 1;
+
         rectfill(buffer, 0, 0, SCREEN_W, SCREEN_H, makecol(0, 0, 0));
         textout_centre_ex(buffer, font, "Entrez votre pseudo :", SCREEN_W / 2, 200, makecol(255, 255, 255), -1);
         rectfill(buffer, SCREEN_W / 2 - 100, 240, SCREEN_W / 2 + 100, 270, makecol(255, 255, 255));
         textout_centre_ex(buffer, font, j->nom, SCREEN_W / 2, 250, makecol(0, 0, 0), -1);
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+        show_mouse(buffer);
         rest(10);
     }
+
     destroy_bitmap(buffer);
     return j;
 }
-int recherche_dans_fichier(Joueur *j) {
-    FILE *pf = fopen("joueur.txt", "r");
-    if (pf == NULL) {
-        allegro_message("Erreur ouverture joueur.txt");
-        exit(1);
-    }
-
-    char nom_fichier[50];
-    int niveau, x, y;
-
-    while (fscanf(pf, "%s %d %d %d", nom_fichier, &niveau, &x, &y) == 4) {
-        if (strcmp(j->nom, nom_fichier) == 0) {
-            fclose(pf);
-            return 1;
-        }
-    }
-
-    fclose(pf);
-    return 0;
-}
 Joueur* nouveau_joueur(BITMAP *screen) {
-
     FILE *pf = fopen("joueur.txt", "r");
     if (!pf) {
         allegro_message("Erreur ouverture joueur.txt");
@@ -487,24 +472,23 @@ Joueur* nouveau_joueur(BITMAP *screen) {
     fclose(pf);
 
     if (count >= 8) {
-
         Joueur *temp = malloc(sizeof(Joueur));
         if (!temp) return NULL;
         strcpy(temp->nom, "DEMO");
         temp->niveau = 1;
         temp->reprise_x = 0;
         temp->reprise_y = 0;
-
         int res = sauvegarder_joueur(temp);
         free(temp);
-
         if (res == 0) return NULL;
     }
+
     while (1) {
         clear_keybuf();
         Joueur *j = saisir_joueur(screen);
         if (j == NULL) {
-            return NULL;
+            clear_keybuf();
+            return NULL;  // Retour propre au menu
         }
 
         if (recherche_dans_fichier(j)) {
@@ -536,6 +520,29 @@ Joueur* nouveau_joueur(BITMAP *screen) {
 }
 
 
+int recherche_dans_fichier(Joueur *j) {
+    FILE *pf = fopen("joueur.txt", "r");
+    if (pf == NULL) {
+        allegro_message("Erreur ouverture joueur.txt");
+        exit(1);
+    }
+
+    char nom_fichier[50];
+    int niveau, x, y;
+
+    while (fscanf(pf, "%s %d %d %d", nom_fichier, &niveau, &x, &y) == 4) {
+        if (strcmp(j->nom, nom_fichier) == 0) {
+            fclose(pf);
+            return 1;
+        }
+    }
+
+    fclose(pf);
+    return 0;
+}
+
+
+
 
 int ecran_victoireniv1() {
     BITMAP *image = load_bitmap("ecran_victoire.bmp", NULL);
@@ -555,15 +562,19 @@ int ecran_victoireniv1() {
 
     while (!key[KEY_ESC]) {
         blit(image, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+
+        show_mouse(buffer);
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+        show_mouse(NULL);
 
         if (mouse_b & 1) {
-            if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 225) && (mouse_y <= 320)) {
+            // Adapter les zones à 1920x1080 (par exemple : centrer et élargir)
+            if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 450) && (mouse_y <= 640)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
                 return 1;
-            } else if ((mouse_x >= 125) && (mouse_x <= 678) && (mouse_y >= 340) && (mouse_y <= 430)) {
+            } else if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 700) && (mouse_y <= 880)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
@@ -572,6 +583,7 @@ int ecran_victoireniv1() {
         }
         rest(10);
     }
+
 
     destroy_bitmap(image);
     destroy_bitmap(buffer);
@@ -595,15 +607,18 @@ int ecran_defaiteniv1() {
 
     while (!key[KEY_ESC]) {
         blit(image, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+
+        show_mouse(buffer);
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+        show_mouse(NULL);
 
         if (mouse_b & 1) {
-            if ((mouse_x >= 150) && (mouse_x <= 650) && (mouse_y >= 270) && (mouse_y <= 340)) {
+            if ((mouse_x >= 500) && (mouse_x <= 1420) && (mouse_y >= 550) && (mouse_y <= 660)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
                 return 1;
-            } else if ((mouse_x >= 150) && (mouse_x <= 650) && (mouse_y >= 370) && (mouse_y <= 440)) {
+            } else if ((mouse_x >= 500) && (mouse_x <= 1420) && (mouse_y >= 700) && (mouse_y <= 820)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
@@ -612,6 +627,7 @@ int ecran_defaiteniv1() {
         }
         rest(10);
     }
+
 
     destroy_bitmap(image);
     destroy_bitmap(buffer);
