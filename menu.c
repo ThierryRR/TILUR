@@ -18,7 +18,8 @@ void affichage_ecran_dacceuil() {
     }
 
     blit(image, screen, 0, 0, 0, 0, image->w, image->h);
-clear_keybuf();
+    clear_keybuf();
+
     while (!key[KEY_SPACE] && !key[KEY_ESC]) {
         poll_keyboard();
         rest(10);
@@ -26,23 +27,23 @@ clear_keybuf();
 
     destroy_bitmap(image);
     clear_to_color(screen, makecol(0, 0, 0));
-clear_keybuf();
+    clear_keybuf();
+
     if (key[KEY_ESC]) {
-        game_over = true;
+        game_over = true;  // on arrête le jeu
     }
-}void ecran_menu() {
+    // Si SPACE, on ne touche pas à game_over
+}
+void ecran_menu() {
     Joueur *j = NULL;
     BITMAP *image = load_bitmap("badlandmenu.bmp", NULL);
-    if (image == NULL) {
-        allegro_message("Erreur chargement badlandmenu.bmp");
-        exit(1);
-    }
-
     BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
-    if (!buffer) {
-        destroy_bitmap(image);
-        allegro_message("Erreur création buffer");
-        exit(1);
+
+    if (!image || !buffer) {
+        allegro_message("Erreur chargement image ou création buffer");
+        if (image) destroy_bitmap(image);
+        if (buffer) destroy_bitmap(buffer);
+        return;
     }
 
     game_over = false;
@@ -57,62 +58,71 @@ clear_keybuf();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         show_mouse(NULL);
 
-        if (keypressed()) {
-            int k = readkey() >> 8;
+        // Détection au clavier avec key[]
+        if (key[KEY_1]) {
+            Joueur *demo = malloc(sizeof(Joueur));
+            if (!demo) continue;
+            sprintf(demo->nom, "DEMO%d", compteur_demo++);
+            demo->niveau = 1;
+            demo->reprise_x = 75;
+            demo->reprise_y = 300;
 
-            if (k == KEY_1) {
-                Joueur *demo = malloc(sizeof(Joueur));
-                if (!demo) continue;
-                sprintf(demo->nom, "DEMO%d", compteur_demo++);
-                demo->niveau = 1;
-                demo->reprise_x = 75;
-                demo->reprise_y = 300;
-                clear_keybuf();
-
-                destroy_bitmap(buffer);
-                destroy_bitmap(image);
-                scrollingNiv1(demo);
-                free(demo);
-                return;
-            }
-            if (k == KEY_TAB) {
-                clear_keybuf(); // toujours avant de changer d'écran
-                show_mouse(NULL);
-                destroy_bitmap(buffer);
-                destroy_bitmap(image);
-                affichage_ecran_dacceuil();
-                return;
-            }
-
-
+            destroy_bitmap(buffer);
+            destroy_bitmap(image);
+            clear_keybuf();
+            scrollingNiv1(demo);
+            free(demo);
+            return;
         }
 
-        if (mouse_b & 1) {
-            if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 450) && (mouse_y <= 640)) {
-                destroy_bitmap(buffer);
-                destroy_bitmap(image);
+        if (key[KEY_TAB]) {
+            clear_keybuf();
+            show_mouse(NULL);
+
+            destroy_bitmap(buffer);
+            destroy_bitmap(image);
+
+            // Appelle l'écran d'accueil
+            affichage_ecran_dacceuil();
+
+            // À la sortie de affichage_ecran_dacceuil, revient proprement au menu (retour direct ici)
+            clear_keybuf();
+            return;
+        }
+
+
+
+        // Gestion clic souris
+        if (mouse_b & 1) {printf("clic %d clic%d",mouse_x,mouse_y);
+           if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 400) && (mouse_y <= 580)) {
                 Joueur *temp = nouveau_joueur(screen);
-                clear_keybuf();
-                if (temp == NULL) return;
-                j = temp;
-                scrollingNiv1(j);
-                return;
+                if (temp != NULL) {
+                    destroy_bitmap(buffer);
+                    destroy_bitmap(image);
+                    scrollingNiv1(temp);
+                    free(temp);
+                    return;
+                } else {
+                    clear_keybuf();
+                    // Important : on réaffiche le menu
+                    continue;
+                }
             }
 
+
             if ((mouse_x >= 237) && (mouse_x <= 1681) && (mouse_y >= 614) && (mouse_y <= 794)) {
-                destroy_bitmap(buffer);
-                destroy_bitmap(image);
+              ;
                 j = chargement_du_joueur(screen);
-                clear_keybuf();
-                if (j == NULL) return;
-                if (j->niveau == 1) {
-                    scrollingNiv1(j);
-                } else if (j->niveau == 2) {
-                    scrollingNiv2(j);
+                if (j != NULL) {
+                    if (j->niveau == 1) scrollingNiv1(j);
+                    else if (j->niveau == 2) scrollingNiv2(j);
+                    else allegro_message("Niveau inconnu");
+                    // on revient au menu après
                 } else {
-                    allegro_message("Niveau inconnu");
+                    // Si j est NULL (appui ESC ou SPACE), on reste dans la boucle du menu
+                    clear_keybuf();
+                    continue;  // <-- c'est ça qu'il faut mettre à la place de 'return'
                 }
-                return;
             }
         }
 
@@ -123,6 +133,7 @@ clear_keybuf();
     destroy_bitmap(image);
     clear_to_color(screen, makecol(0, 0, 0));
 }
+
 
 
 
@@ -296,7 +307,7 @@ int sauvegarder_joueur(Joueur *j) {
     }
 
     if (!modifie) {
-        if (nb_joueurs >= 8) {
+        if (nb_joueurs >= 16) {
             BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
             BITMAP *fond = load_bitmap("fond.bmp", NULL);
             if (!buffer || !fond) {
@@ -421,7 +432,9 @@ Joueur *saisir_joueur(BITMAP *screen) {
     while (!key[KEY_ENTER]) {
         poll_keyboard();
         if (key[KEY_SPACE]) {
+            show_mouse( NULL);
             destroy_bitmap(buffer);
+
             free(j);
             clear_keybuf();
             return NULL;
@@ -569,12 +582,12 @@ int ecran_victoireniv1() {
 
         if (mouse_b & 1) {
             // Adapter les zones à 1920x1080 (par exemple : centrer et élargir)
-            if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 450) && (mouse_y <= 640)) {
+            if ((mouse_x >= 354) && (mouse_x <= 1569) && (mouse_y >= 426) && (mouse_y <= 606)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
                 return 1;
-            } else if ((mouse_x >= 480) && (mouse_x <= 1440) && (mouse_y >= 700) && (mouse_y <= 880)) {
+            } else if ((mouse_x >= 352) && (mouse_x <= 1569) && (mouse_y >= 653) && (mouse_y <= 825)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
@@ -613,12 +626,12 @@ int ecran_defaiteniv1() {
         show_mouse(NULL);
 
         if (mouse_b & 1) {
-            if ((mouse_x >= 500) && (mouse_x <= 1420) && (mouse_y >= 550) && (mouse_y <= 660)) {
+            if ((mouse_x >= 118) && (mouse_x <= 1801) && (mouse_y >= 417) && (mouse_y <= 612)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);
                 return 1;
-            } else if ((mouse_x >= 500) && (mouse_x <= 1420) && (mouse_y >= 700) && (mouse_y <= 820)) {
+            } else if ((mouse_x >= 115) && (mouse_x <=1803) && (mouse_y >= 691) && (mouse_y <= 879)) {
                 destroy_bitmap(image);
                 destroy_bitmap(buffer);
                 rest(300);

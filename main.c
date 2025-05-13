@@ -23,28 +23,21 @@ void initialisation_allegro() {
 
 int main() {
     initialisation_allegro();
-    int quitter_jeu = 0;
-    Joueur *j = NULL;
 
+    while (!game_over) {
+        affichage_ecran_dacceuil();
+        if (game_over) break;  // Si appui ESC dans accueil
 
-
-    affichage_ecran_dacceuil(&j);
-    while (!quitter_jeu) {
         ecran_menu();
-        while (!key[KEY_ESC]) {
-            if (game_over) {
-                ecran_defaite(j);
-                game_over = false;
-            }
-            rest(10);
-        }
-        if (key[KEY_ESC]) {
-            quitter_jeu = 1;
-        }
+        if (game_over) break;  // Si appui ESC dans menu
     }
+
     allegro_exit();
     return 0;
-}END_OF_MAIN();
+}
+END_OF_MAIN();
+
+
 
 
 
