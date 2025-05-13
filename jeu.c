@@ -27,7 +27,7 @@ void jeu_niveau_1(BITMAP *fond_final, Joueur *j) {
 
     // 🔥 Protection : ne PAS écraser les coordonnées si c'est un DEMO
     if (strncmp(j->nom, "DEMO", 4) != 0) {
-        j->reprise_x = 800;
+        j->reprise_x = 3200;
         j->reprise_y = 500;
     }
 
@@ -303,8 +303,8 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
         creer_bonus(4100, 280, malustaille, NULL)
     };
     BonusPosition mon_bonus5[NB_BONUS] = {
-        creer_bonus(1200, 500, bonuscomportement, NULL),
-        creer_bonus(3500, 250, bonuscomportement, NULL),
+        creer_bonus(5000, 500, bonuscomportement, NULL),
+        creer_bonus(4500, 250, bonuscomportement, NULL),
         creer_bonus(4100, 280, bonuscomportement, NULL)
     };
     BonusPosition mon_bonus6[NB_BONUS] = {
@@ -319,7 +319,8 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
     };
     GrpPersonnages groupe;
     groupe.nb_personnages = 1;
-
+j->reprise_x=3200;
+    j->reprise_y=500;
     int reprise_x = j->reprise_x;
     int reprise_y = j->reprise_y;
     float screenx = reprise_x - SCREEN_W / 2;
@@ -334,6 +335,12 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
     cp.hauteur = cp.sprite[0]->h / 12;
 
 
+    for (int b = 0; b < NB_BONUS; b++) {
+        mon_bonus2[b].largeur = bombe0->w / 12;
+        mon_bonus2[b].hauteur = bombe0->h / 12;
+        mon_bonus3[b].largeur = sprite_bonus3->w / 12;
+        mon_bonus3[b].hauteur = sprite_bonus3->h / 12;
+    }
 
     game_over = false;
     int fin_scroll = fond->w - SCREEN_W;
@@ -453,6 +460,19 @@ void jeu_niveau_2(BITMAP *fond_final, Joueur *j) {
             int int_screenx = (int)screenx;
             clear_bitmap(page);
             blit(fond, page, int_screenx, 0, 0, 0, SCREEN_W, SCREEN_H);
+            clear_bitmap(page);
+            blit(fond, page, int_screenx, 0, 0, 0, SCREEN_W, SCREEN_H);
+
+            for (int b = 0; b < NB_BONUS; b++) {
+                afficher_bonus(mon_bonus1[b], page, screenx);
+                afficher_bonus_explosion(mon_bonus2[b], page, screenx);
+                afficher_bonus(mon_bonus3[b], page, screenx);
+                afficher_bonus(mon_bonus4[b], page, screenx);
+                afficher_bonus(mon_bonus5[b], page, screenx);
+                afficher_bonus(mon_bonus6[b], page, screenx);
+                afficher_bonus(malust[b], page, screenx);
+                afficher_bonus(bonust[b], page, screenx);
+            }
 
             afficher_checkpoint(page, cp, int_screenx);
             dessiner_groupe(&groupe, page);

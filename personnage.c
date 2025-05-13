@@ -9,6 +9,7 @@ void creation_personnage(Personnage *p,int x,int y, int largeur, int hauteur) {
     p->largeur=largeur;
     p->hauteur=hauteur;
     p->timer_vitesse=0;
+    p->timer_pic = 0;
     char sprites[100];
     for(int i=0;i<5;i++) {
         sprintf(sprites, "dragon%d.bmp", i);
@@ -243,13 +244,13 @@ bool collision_pic(Personnage* p, BITMAP* fond, float screenx) {
     }
 
     for (int dx = 0; dx < p->largeur; dx++) {
-        for (int dy = 0; dy < p->hauteur; dy++) {  // toute la hauteur, pas -3
+        for (int dy = 0; dy < p->hauteur; dy++) {
             int px = (int)(p->x + dx + offset_x);
             int py = p->y + dy;
 
             if (px >= 0 && px < fond->w && py >= 0 && py < fond->h) {
                 int couleur = getpixel(fond, px, py);
-                if (getr(couleur) == 104 && getg(couleur) == 0 && getb(couleur) == 0) {
+                if (couleur == makecol(104, 0, 0)) {
                     return true;
                 }
             }
@@ -257,6 +258,7 @@ bool collision_pic(Personnage* p, BITMAP* fond, float screenx) {
     }
     return false;
 }
+
 void gerer_collision_pics_groupe(GrpPersonnages *groupe, BITMAP *fond, float screenx) {
     for (int i = 0; i < groupe->nb_personnages; i++) {
         Personnage *p = &(groupe->persos[i]);
@@ -273,7 +275,7 @@ void gerer_collision_pics_groupe(GrpPersonnages *groupe, BITMAP *fond, float scr
                 int py = p->y + dy;
                 if (px >= 0 && px < fond->w && py >= 0 && py < fond->h) {
                     int couleur = getpixel(fond, px, py);
-                    if (getr(couleur) == 104 && getg(couleur) == 0 && getb(couleur) == 0) {
+                    if (couleur == makecol(104, 0, 0)) {
                         touche_pic = true;
                         break;
                     }
@@ -283,18 +285,19 @@ void gerer_collision_pics_groupe(GrpPersonnages *groupe, BITMAP *fond, float scr
         }
 
         if (touche_pic) {
+            printf("TOUCHE PIC timer_pic = %d\n", p->timer_pic);
             if (p->timer_pic > 0) {
-                // Immunisé : bloque le perso comme un mur, mais ne le tue pas
                 p->x -= 1;
                 p->vy = 0;
             } else {
-                // Pas immunisé : le perso est retiré du groupe (mort)
+                printf("PERSONNAGE MORT SUR PIC\n");
                 for (int j = i; j < groupe->nb_personnages - 1; j++) {
                     groupe->persos[j] = groupe->persos[j + 1];
                 }
                 groupe->nb_personnages--;
-                i--; // On ne saute pas le suivant
+                i--;
             }
         }
+
     }
 }
